@@ -9,20 +9,21 @@ import SwiftUI
 import SwiftData
 
 struct ContentView: View {
-    
+
     enum TabIdentifier: Hashable {
         case notes, create, profile
     }
-    
+
     @State private var activeTab: TabIdentifier = .notes
     @State private var showCreateSheet: Bool = false
     @State private var title: String = ""
     @State private var desc: String = ""
     @State private var editingNote: NotesModel? = nil
     @State private var selectedDetent: PresentationDetent = .medium
-    
+    @State private var showEmptyWarning: Bool = false
+
     @Environment(\.modelContext) private var context
-    
+
     var body: some View {
         TabView(selection: $activeTab) {
             Tab("Notes", systemImage: "xmark.triangle.circle.square", value: .notes) {
@@ -36,12 +37,12 @@ struct ContentView: View {
                     }
                 }
             }
-            
+
             Tab("Create", systemImage: "plus", value: .create) {
                 // Empty view as this tab acts as a button
                 Color.clear
             }
-            
+
             Tab("Profile", systemImage: "person.fill", value: .profile) {
                 NavigationStack {
                     ProfileTabView()
@@ -93,6 +94,13 @@ struct ContentView: View {
                         Button("Save", systemImage: "checkmark", role: .confirm) {
                             let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
                             let trimmedDesc = desc.trimmingCharacters(in: .whitespacesAndNewlines)
+
+                            // If both fields are empty, show warning and do not save
+                            if trimmedTitle.isEmpty && trimmedDesc.isEmpty {
+                                showEmptyWarning = true
+                                return
+                            }
+
                             if let note = editingNote {
                                 // Update existing note
                                 note.title = trimmedTitle
@@ -108,18 +116,24 @@ struct ContentView: View {
                 }
             }
             .presentationDetents([.medium, .large], selection: $selectedDetent)
+            .alert("Missing Text", isPresented: $showEmptyWarning) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text("Can't save without the title or description. Try again!")
+            }
         }
     }
 
     func addNote(title: String, desc: String) {
-        let note = NotesModel(title: title, desc: desc)
-        context.insert(note)
+        if !title.isEmpty || !desc.isEmpty {
+            let note = NotesModel(title: title, desc: desc)
+            context.insert(note)
+        }
     }
-    
+
     func reset() {
         title = ""
         desc = ""
-        
         editingNote = nil
         showCreateSheet = false
     }
@@ -128,4 +142,3 @@ struct ContentView: View {
 #Preview {
     ContentView()
 }
-

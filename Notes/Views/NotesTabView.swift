@@ -11,13 +11,13 @@ import SwiftData
 struct NotesTabView: View {
     @Environment(\.modelContext) private var context
     @Query(sort: \NotesModel.created_at, order: .reverse) private var notes: [NotesModel]
-    
+
     let onSelect: (NotesModel) -> Void
 
     init(onSelect: @escaping (NotesModel) -> Void = { _ in }) {
         self.onSelect = onSelect
     }
-    
+
     var body: some View {
         List {
             ForEach(notes) { note in
@@ -34,10 +34,11 @@ struct NotesTabView: View {
                         }
                         Text(note.desc)
                           .font(.system(size: 12))
+                          .lineHeight(.loose)
                     }
                 }
                 .buttonStyle(.plain)
-                .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                     Button("Delete", systemImage: "trash", role: .destructive) {
                         context.delete(note)
                     }
@@ -56,4 +57,3 @@ struct NotesTabView: View {
 #Preview {
   ContentView()
 }
-
