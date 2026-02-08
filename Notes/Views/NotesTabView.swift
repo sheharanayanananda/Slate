@@ -11,6 +11,11 @@ import SwiftData
 struct NotesTabView: View {
     @Environment(\.modelContext) private var context
     @Query(sort: \NotesModel.created_at, order: .reverse) private var notes: [NotesModel]
+    
+    @State private var noteToShare: NotesModel?
+    @State private var showShareOptions = false
+    @State private var showShareSheet = false
+    @State private var shareItems: [Any] = []
 
     let onSelect: (NotesModel) -> Void
 
@@ -46,13 +51,43 @@ struct NotesTabView: View {
                     }
                 }
                 .swipeActions(edge: .leading, allowsFullSwipe: false) {
-                    Button("Coming Soon", systemImage: "bolt") {}
-                            .tint(.accentColor)
+                    Button("Share", systemImage: "square.and.arrow.up") {
+                        noteToShare = note
+                        showShareOptions = true
+                    }
+                    .tint(.accentColor)
                 }
             }
         }
         .navigationTitle("Notes")
         .toolbarTitleDisplayMode(.automatic)
+        .confirmationDialog("Share Note", isPresented: $showShareOptions, titleVisibility: .visible) {
+            Button("Share Content") {
+                if let note = noteToShare {
+                    let richText = NoteSharingHelper.generateRichText(for: note)
+                    shareItems = [richText]
+                    showShareSheet = true
+                }
+            }
+            
+            Button("Save as PDF") {
+                if let note = noteToShare, let pdfURL = NoteSharingHelper.generatePDF(for: note) {
+                    shareItems = [pdfURL]
+                    showShareSheet = true
+                }
+            }
+            
+            Button("Save as Text") {
+                if let note = noteToShare, let textURL = NoteSharingHelper.generateTextFile(for: note) {
+                    shareItems = [textURL]
+                    showShareSheet = true
+                }
+            }
+        }
+        .sheet(isPresented: $showShareSheet) {
+            ShareSheet(activityItems: shareItems)
+                .presentationDetents([.medium, .large])
+        }
     }
 }
 
