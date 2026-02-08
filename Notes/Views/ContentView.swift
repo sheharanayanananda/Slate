@@ -33,7 +33,7 @@ struct ContentView: View {
 
             Tab("Create", systemImage: "plus", value: .create) {
                 NavigationStack {
-                    CreateTabView(editingNote: $editingNote)
+                    CreateTabView(editingNote: $editingNote, activeTab: $activeTab)
                 }
             }
 
