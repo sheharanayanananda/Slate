@@ -64,8 +64,8 @@ struct NotesTabView: View {
         .confirmationDialog("Share Note", isPresented: $showShareOptions, titleVisibility: .visible) {
             Button("Share Content") {
                 if let note = noteToShare {
-                    let richText = NoteSharingHelper.generateRichText(for: note)
-                    shareItems = [richText]
+                    let itemSource = NoteItemSource(note: note)
+                    shareItems = [itemSource]
                     showShareSheet = true
                 }
             }

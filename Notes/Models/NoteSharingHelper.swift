@@ -12,8 +12,7 @@ struct NoteSharingHelper {
     
     static func generateRichText(for note: NotesModel) -> NSAttributedString {
         let titleAttributes: [NSAttributedString.Key: Any] = [
-            .font: UIFont.systemFont(ofSize: 24, weight: .bold),
-            .underlineStyle: NSUnderlineStyle.single.rawValue
+            .font: UIFont.systemFont(ofSize: 24, weight: .bold)
         ]
         
         let descAttributes: [NSAttributedString.Key: Any] = [
@@ -24,6 +23,10 @@ struct NoteSharingHelper {
         attributedString.append(NSAttributedString(string: note.desc, attributes: descAttributes))
         
         return attributedString
+    }
+    
+    static func generateMarkdownText(for note: NotesModel) -> String {
+        return "*\(note.title)*\n\n\(note.desc)"
     }
     
     static func generatePDF(for note: NotesModel) -> URL? {
@@ -56,6 +59,26 @@ struct NoteSharingHelper {
         } catch {
             print("Could not create text file: \(error)")
             return nil
+        }
+    }
+}
+
+class NoteItemSource: NSObject, UIActivityItemSource {
+    let note: NotesModel
+    
+    init(note: NotesModel) {
+        self.note = note
+    }
+    
+    func activityViewControllerPlaceholderItem(_ activityViewController: UIActivityViewController) -> Any {
+        return note.title
+    }
+    
+    func activityViewController(_ activityViewController: UIActivityViewController, itemForActivityType activityType: UIActivity.ActivityType?) -> Any? {
+        if activityType == .message || activityType == .mail {
+            return NoteSharingHelper.generateRichText(for: note)
+        } else {
+            return NoteSharingHelper.generateMarkdownText(for: note)
         }
     }
 }
