@@ -26,14 +26,16 @@ struct NotesTabView: View {
                 } label: {
                     VStack(alignment: .leading, spacing: 8) {
                         HStack {
-                            Text(note.title)
-                              .font(.system(size: 17))
+                            Text(note.title.count > 20 ? String(note.title.prefix(20)) + "…" : note.title)
+                                .font(.system(size: 17))
+                                .truncationMode(.tail)
                             Spacer()
                             Text(note.created_at.formatted(date: .abbreviated, time: .shortened))
                               .font(.caption)
                         }
                         Text(note.desc)
                           .font(.system(size: 12))
+                          .lineLimit(4)
                           .lineHeight(.loose)
                     }
                 }
