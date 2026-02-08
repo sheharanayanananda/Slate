@@ -6,27 +6,46 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct NotesTabView: View {
+    @Environment(\.modelContext) private var context
+    @Query(sort: \NotesModel.created_at, order: .reverse) private var notes: [NotesModel]
+    
+    let onSelect: (NotesModel) -> Void
+
+    init(onSelect: @escaping (NotesModel) -> Void = { _ in }) {
+        self.onSelect = onSelect
+    }
+    
     var body: some View {
         List {
-            VStack(alignment: .leading, spacing: 8) {
-                HStack {
-                    Text("Note Header Here")
-                      .font(.system(size: 17))
-                    Spacer()
-                    Text("07th Feb 2026")
-                      .font(.caption)
+            ForEach(notes) { note in
+                Button {
+                    onSelect(note)
+                } label: {
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Text(note.title)
+                              .font(.system(size: 17))
+                            Spacer()
+                            Text(note.created_at.formatted(date: .abbreviated, time: .shortened))
+                              .font(.caption)
+                        }
+                        Text(note.desc)
+                          .font(.system(size: 12))
+                    }
                 }
-                Text("Note Description Here and 1234 and nothing no...")
-                  .font(.system(size: 12))
-            }
-            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                Button(role: .destructive) {}
-            }
-            .swipeActions(edge: .leading, allowsFullSwipe: false) {
-                Button("Coming Soon", systemImage: "bolt") {}
-                        .tint(.accentColor)
+                .buttonStyle(.plain)
+                .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                    Button("Delete", systemImage: "trash", role: .destructive) {
+                        context.delete(note)
+                    }
+                }
+                .swipeActions(edge: .leading, allowsFullSwipe: false) {
+                    Button("Coming Soon", systemImage: "bolt") {}
+                            .tint(.accentColor)
+                }
             }
         }
         .navigationTitle("Notes")

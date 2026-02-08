@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct ContentView: View {
     
@@ -16,13 +17,23 @@ struct ContentView: View {
     @State private var activeTab: TabIdentifier = .notes
     @State private var showCreateSheet: Bool = false
     @State private var title: String = ""
-    @State private var description: String = ""
+    @State private var desc: String = ""
+    @State private var editingNote: NotesModel? = nil
+    @State private var selectedDetent: PresentationDetent = .medium
+    
+    @Environment(\.modelContext) private var context
     
     var body: some View {
         TabView(selection: $activeTab) {
             Tab("Notes", systemImage: "xmark.triangle.circle.square", value: .notes) {
                 NavigationStack {
-                    NotesTabView()
+                    NotesTabView { note in
+                        // Prefill fields and open sheet for editing
+                        editingNote = note
+                        title = note.title
+                        desc = note.desc
+                        showCreateSheet = true
+                    }
                 }
             }
             
@@ -41,43 +52,80 @@ struct ContentView: View {
             if newValue == .create {
                 showCreateSheet = true
                 activeTab = oldValue
+                editingNote = nil
+                title = ""
+                desc = ""
             }
         }
         .sheet(isPresented: $showCreateSheet) {
             NavigationStack {
-                VStack {
-                    TextField(text: $description, prompt: Text("Description Here...")) {}
+                VStack(spacing: 20) {
+                    TextField("Title Here", text: $title)
+                        .font(.title3)
+                        .padding(.horizontal, 5)
+                    TextEditor(text: $desc)
+                        .frame(minHeight: 160)
+                        .scrollContentBackground(selectedDetent == .medium ? .hidden : .visible)
+                        .overlay(alignment: .topLeading) {
+                            if desc.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                                Text("Try n try one day u can fly ✌🏻")
+                                    .foregroundStyle(.secondary)
+                                    .opacity(0.4)
+                                    .padding(.horizontal, 5)
+                                    .padding(.top, 8)
+                                    .allowsHitTesting(false)
+                                    .animation(nil, value: selectedDetent)
+                            }
+                        }
                 }
                 .padding()
                 .frame(maxHeight: .infinity, alignment: .top)
+                .navigationTitle(editingNote == nil ? "New Note" : "Edit Note")
+                .toolbarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
-                        Button(role: .close) {
-                            // cancel logic here
-                            showCreateSheet = false
+                        Button("Cancel", systemImage: "xmark", role: .cancel) {
+                            reset()
                         }
                     }
-                    
-                    ToolbarItem(placement: .automatic) {
-                        TextField(text: $title, prompt: Text("Title Here")) {}
-                            .font(.headline)
-                            .fontWeight(.medium)
-                            .padding()
-                    }
-                    
+
                     ToolbarItem(placement: .confirmationAction) {
-                        Button(role: .confirm) {
-                            // creation logic here
-                            showCreateSheet = false
+                        Button("Save", systemImage: "checkmark", role: .confirm) {
+                            let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
+                            let trimmedDesc = desc.trimmingCharacters(in: .whitespacesAndNewlines)
+                            if let note = editingNote {
+                                // Update existing note
+                                note.title = trimmedTitle
+                                note.desc = trimmedDesc
+                            } else {
+                                // Create new note
+                                addNote(title: trimmedTitle, desc: trimmedDesc)
+                            }
+                            reset()
                         }
+                        .keyboardShortcut(.defaultAction)
                     }
                 }
             }
-            .presentationDetents([.medium, .large])
+            .presentationDetents([.medium, .large], selection: $selectedDetent)
         }
+    }
+
+    func addNote(title: String, desc: String) {
+        let note = NotesModel(title: title, desc: desc)
+        context.insert(note)
+    }
+    
+    func reset() {
+        title = ""
+        desc = ""
+        
+        editingNote = nil
+        showCreateSheet = false
     }
 }
 
 #Preview {
     ContentView()
 }
+
