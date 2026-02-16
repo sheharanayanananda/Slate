@@ -22,7 +22,6 @@ struct NotesTabView: View {
     init(onSelect: @escaping (NotesModel) -> Void = { _ in }) {
         self.onSelect = onSelect
     }
-
     var body: some View {
         List {
             ForEach(notes) { note in
@@ -43,6 +42,8 @@ struct NotesTabView: View {
                           .lineLimit(4)
                           .lineHeight(.loose)
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .swipeActions(edge: .trailing, allowsFullSwipe: true) {
