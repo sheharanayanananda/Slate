@@ -400,7 +400,7 @@
 				DEVELOPMENT_TEAM = 8Y2RUN3NR9;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = NoteBook;
+				INFOPLIST_KEY_CFBundleDisplayName = Slate;
 				INFOPLIST_KEY_CFBundleName = Notes;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_NSCameraUsageDescription = "To allow user to create notes by capturing a picture without saving any location.";
@@ -435,7 +435,7 @@
 				DEVELOPMENT_TEAM = 8Y2RUN3NR9;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = NoteBook;
+				INFOPLIST_KEY_CFBundleDisplayName = Slate;
 				INFOPLIST_KEY_CFBundleName = Notes;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.productivity";
 				INFOPLIST_KEY_NSCameraUsageDescription = "To allow user to create notes by capturing a picture without saving any location.";

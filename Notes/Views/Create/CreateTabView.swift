@@ -29,7 +29,7 @@ struct CreateTabView: View {
                 .frame(minHeight: 160)
                 .overlay(alignment: .topLeading) {
                     if desc.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                        Text("Try n try one day u can fly ✌🏻")
+                        Text("Slate it, don’t store it.")
                             .foregroundStyle(.secondary)
                             .opacity(0.4)
                             .padding(.horizontal, 5)

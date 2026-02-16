@@ -69,7 +69,7 @@ struct NotesTabView: View {
                 // If you want broader OS support, see the fallback below
             }
         }
-        .navigationTitle("Notes")
+        .navigationTitle("Slate")
         .toolbarTitleDisplayMode(.automatic)
         .confirmationDialog("Share Note", isPresented: $showShareOptions, titleVisibility: .visible) {
             Button("Share Richtext") {
