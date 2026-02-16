@@ -59,10 +59,20 @@ struct NotesTabView: View {
                 }
             }
         }
+        .overlay {
+            if notes.isEmpty {
+                ContentUnavailableView(
+                    "Hello !",
+                    systemImage: "sparkles",
+                    description: Text("Let's note down something useful!")
+                )
+                // If you want broader OS support, see the fallback below
+            }
+        }
         .navigationTitle("Notes")
         .toolbarTitleDisplayMode(.automatic)
         .confirmationDialog("Share Note", isPresented: $showShareOptions, titleVisibility: .visible) {
-            Button("Share Content") {
+            Button("Share Richtext") {
                 if let note = noteToShare {
                     let itemSource = NoteItemSource(note: note)
                     shareItems = [itemSource]

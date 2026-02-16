@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		E88A63F32F42E91700D8CFB8 /* Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = E88A63F22F42E91700D8CFB8 /* Info.plist */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		E852132F2F37677700E5E429 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -27,24 +31,12 @@
 		E85213212F37677500E5E429 /* Notes.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Notes.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		E852132E2F37677700E5E429 /* NotesTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NotesTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		E85213382F37677700E5E429 /* NotesUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = NotesUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		E88A63F22F42E91700D8CFB8 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
-
-/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		E87A1D7E2F38C60F00E9A79F /* Exceptions for "Notes" folder in "Notes" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Info.plist,
-			);
-			target = E85213202F37677500E5E429 /* Notes */;
-		};
-/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		E85213232F37677500E5E429 /* Notes */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				E87A1D7E2F38C60F00E9A79F /* Exceptions for "Notes" folder in "Notes" target */,
-			);
 			path = Notes;
 			sourceTree = "<group>";
 		};
@@ -92,6 +84,7 @@
 				E85213312F37677700E5E429 /* NotesTests */,
 				E852133B2F37677700E5E429 /* NotesUITests */,
 				E85213222F37677500E5E429 /* Products */,
+				E88A63F22F42E91700D8CFB8 /* Info.plist */,
 			);
 			sourceTree = "<group>";
 		};
@@ -225,6 +218,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E88A63F32F42E91700D8CFB8 /* Info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -413,7 +407,6 @@
 				DEVELOPMENT_TEAM = 8Y2RUN3NR9;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = Notes/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Notes;
 				INFOPLIST_KEY_CFBundleName = Notes;
 				INFOPLIST_KEY_NSCameraUsageDescription = "";
@@ -449,7 +442,6 @@
 				DEVELOPMENT_TEAM = 8Y2RUN3NR9;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = Notes/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Notes;
 				INFOPLIST_KEY_CFBundleName = Notes;
 				INFOPLIST_KEY_NSCameraUsageDescription = "";

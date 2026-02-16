@@ -37,7 +37,7 @@ struct ContentView: View {
                 }
             }
 
-            Tab("Profile", systemImage: "person.fill", value: .profile) {
+            Tab("Settings", systemImage: "gear", value: .profile) {
                 NavigationStack {
                     ProfileTabView()
                 }
