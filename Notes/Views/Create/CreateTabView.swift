@@ -40,6 +40,12 @@ struct CreateTabView: View {
         }
         .padding()
         .frame(maxHeight: .infinity, alignment: .top)
+        .onAppear {
+            if let note = editingNote {
+                title = note.title
+                desc = note.desc
+            }
+        }
         .onChange(of: editingNote) { _, newValue in
             if let note = newValue {
                 title = note.title
