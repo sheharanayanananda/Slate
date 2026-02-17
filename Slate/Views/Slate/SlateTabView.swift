@@ -1,6 +1,6 @@
 //
-//  NotesTabView.swift
-//  Notes
+//  SlateTabView.swift
+//  Slate
 //
 //  Created by Thineth Shehara on 2026-02-07.
 //
@@ -8,18 +8,18 @@
 import SwiftUI
 import SwiftData
 
-struct NotesTabView: View {
+struct SlateTabView: View {
     @Environment(\.modelContext) private var context
-    @Query(sort: \NotesModel.created_at, order: .reverse) private var notes: [NotesModel]
+    @Query(sort: \SlateModel.created_at, order: .reverse) private var notes: [SlateModel]
     
-    @State private var noteToShare: NotesModel?
+    @State private var noteToShare: SlateModel?
     @State private var showShareOptions = false
     @State private var showShareSheet = false
     @State private var shareItems: [Any] = []
 
-    let onSelect: (NotesModel) -> Void
+    let onSelect: (SlateModel) -> Void
 
-    init(onSelect: @escaping (NotesModel) -> Void = { _ in }) {
+    init(onSelect: @escaping (SlateModel) -> Void = { _ in }) {
         self.onSelect = onSelect
     }
     var body: some View {

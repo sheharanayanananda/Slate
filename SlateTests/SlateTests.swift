@@ -1,14 +1,14 @@
 //
-//  NotesTests.swift
-//  NotesTests
+//  SlateTests.swift
+//  SlateTests
 //
 //  Created by Thineth Shehara on 2026-02-07.
 //
 
 import Testing
-@testable import Notes
+@testable import Slate
 
-struct NotesTests {
+struct SlateTests {
 
     @Test func example() async throws {
         // Write your test here and use APIs like `#expect(...)` to check expected conditions.

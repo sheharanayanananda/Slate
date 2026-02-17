@@ -1,13 +1,13 @@
 //
-//  NotesUITestsLaunchTests.swift
-//  NotesUITests
+//  SlateUITestsLaunchTests.swift
+//  SlateUITests
 //
 //  Created by Thineth Shehara on 2026-02-07.
 //
 
 import XCTest
 
-final class NotesUITestsLaunchTests: XCTestCase {
+final class SlateUITestsLaunchTests: XCTestCase {
 
     override class var runsForEachTargetApplicationUIConfiguration: Bool {
         true

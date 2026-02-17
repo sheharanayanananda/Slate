@@ -1,6 +1,6 @@
 //
 //  ContentView.swift
-//  Notes
+//  Slate
 //
 //  Created by Thineth Shehara on 2026-02-07.
 //
@@ -15,15 +15,15 @@ struct ContentView: View {
     }
 
     @State private var activeTab: TabIdentifier = .notes
-    @State private var editingNote: NotesModel? = nil
+    @State private var editingNote: SlateModel? = nil
 
     @Environment(\.modelContext) private var context
 
     var body: some View {
         TabView(selection: $activeTab) {
-            Tab("Notes", systemImage: "xmark.triangle.circle.square", value: .notes) {
+            Tab("Slate", systemImage: "xmark.triangle.circle.square", value: .notes) {
                 NavigationStack {
-                    NotesTabView { note in
+                    SlateTabView { note in
                         // Prefill fields and switch to Create tab for editing
                         editingNote = note
                         activeTab = .create

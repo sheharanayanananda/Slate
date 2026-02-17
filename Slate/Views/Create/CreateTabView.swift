@@ -1,6 +1,6 @@
 //
 //  CreateTabView.swift
-//  Notes
+//  Slate
 //
 //  Created by Thineth Shehara on 2026-02-08.
 //
@@ -12,7 +12,7 @@ import Vision
 struct CreateTabView: View {
     @State private var title: String = ""
     @State private var desc: String = ""
-    @Binding var editingNote: NotesModel?
+    @Binding var editingNote: SlateModel?
     @Binding var activeTab: ContentView.TabIdentifier
 
     @Environment(\.modelContext) private var context
@@ -29,7 +29,7 @@ struct CreateTabView: View {
                 .frame(minHeight: 160)
                 .overlay(alignment: .topLeading) {
                     if desc.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                        Text("Slate it, don’t store it.")
+                        Text("Slate it, don't store it.")
                             .foregroundStyle(.secondary)
                             .opacity(0.4)
                             .padding(.horizontal, 5)
@@ -106,7 +106,7 @@ struct CreateTabView: View {
             note.title = trimmedTitle
             note.desc = trimmedDesc
         } else {
-            let note = NotesModel(title: trimmedTitle, desc: trimmedDesc)
+            let note = SlateModel(title: trimmedTitle, desc: trimmedDesc)
             context.insert(note)
         }
         reset()

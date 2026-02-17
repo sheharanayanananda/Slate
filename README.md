@@ -1,10 +1,10 @@
-# Notes
+# Slate
 
 A simple SwiftUI notes app demonstrating a multi-tab iOS app built with Swift and SwiftUI.
 
 ## Overview
 
-- **Project:** Notes
+- **Project:** Slate
 - **Language:** Swift
 - **Platform:** iOS (SwiftUI)
 
@@ -20,7 +20,7 @@ A simple SwiftUI notes app demonstrating a multi-tab iOS app built with Swift an
 
 ## Run
 
-1. Open the project in Xcode: `Notes.xcodeproj` or the workspace if you use Swift packages.
+1. Open the project in Xcode: `Slate.xcodeproj` or the workspace if you use Swift packages.
 2. Select a simulator or device and press Run.
 
 ## Tests
@@ -34,7 +34,7 @@ swift test # if converted to SwiftPM; otherwise run tests in Xcode
 ## Files of interest
 
 - `ContentView.swift` — main app UI
-- `NotesModel.swift` — notes data model
+- `SlateModel.swift` — notes data model
 
 ## License
 

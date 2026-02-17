@@ -1,6 +1,6 @@
 //
 //  NoteSharingHelper.swift
-//  Notes
+//  Slate
 //
 //  Created by Thineth Shehara on 2026-02-08.
 //
@@ -10,7 +10,7 @@ import PDFKit
 
 struct NoteSharingHelper {
     
-    static func generateRichText(for note: NotesModel) -> NSAttributedString {
+    static func generateRichText(for note: SlateModel) -> NSAttributedString {
         let titleAttributes: [NSAttributedString.Key: Any] = [
             .font: UIFont.systemFont(ofSize: 24, weight: .bold)
         ]
@@ -25,11 +25,11 @@ struct NoteSharingHelper {
         return attributedString
     }
     
-    static func generateMarkdownText(for note: NotesModel) -> String {
+    static func generateMarkdownText(for note: SlateModel) -> String {
         return "*\(note.title)*\n\n\(note.desc)"
     }
     
-    static func generatePDF(for note: NotesModel) -> URL? {
+    static func generatePDF(for note: SlateModel) -> URL? {
         let content = generateRichText(for: note)
         
         let pdfRenderer = UIGraphicsPDFRenderer(bounds: CGRect(x: 0, y: 0, width: 612, height: 792)) // Standard US Letter size
@@ -49,7 +49,7 @@ struct NoteSharingHelper {
         }
     }
     
-    static func generateTextFile(for note: NotesModel) -> URL? {
+    static func generateTextFile(for note: SlateModel) -> URL? {
         let text = "\(note.title)\n\n\(note.desc)"
         let fileURL = FileManager.default.temporaryDirectory.appendingPathComponent("\(note.title).txt")
         
@@ -64,9 +64,9 @@ struct NoteSharingHelper {
 }
 
 class NoteItemSource: NSObject, UIActivityItemSource {
-    let note: NotesModel
+    let note: SlateModel
     
-    init(note: NotesModel) {
+    init(note: SlateModel) {
         self.note = note
     }
     

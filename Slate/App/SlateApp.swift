@@ -1,6 +1,6 @@
 //
-//  NotesApp.swift
-//  Notes
+//  SlateApp.swift
+//  Slate
 //
 //  Created by Thineth Shehara on 2026-02-07.
 //
@@ -9,11 +9,11 @@ import SwiftUI
 import SwiftData
 
 @main
-struct NotesApp: App {
+struct SlateApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
         }
-        .modelContainer(for: [NotesModel.self])
+        .modelContainer(for: [SlateModel.self])
     }
 }

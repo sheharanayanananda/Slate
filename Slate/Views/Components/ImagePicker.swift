@@ -1,6 +1,6 @@
 //
 //  ImagePicker.swift
-//  Notes
+//  Slate
 //
 //  Created by Thineth Shehara on 2026-02-08.
 //

@@ -1,6 +1,6 @@
 //
-//  NotesModel.swift
-//  Notes
+//  SlateModel.swift
+//  Slate
 //
 //  Created by Thineth Shehara on 2026-02-08.
 //
@@ -9,7 +9,7 @@ import Foundation
 import SwiftData
 
 @Model
-final class NotesModel: Identifiable {
+final class SlateModel: Identifiable {
     @Attribute(.unique) var id: String
     var title: String
     var desc: String
