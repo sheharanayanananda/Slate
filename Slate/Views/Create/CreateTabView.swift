@@ -20,6 +20,7 @@ struct CreateTabView: View {
     @State private var showCamera: Bool = false
     @State private var recognizedImage: UIImage?
 
+    //----------------- Start of UI Code -----------------//
     var body: some View {
         VStack(spacing: 20) {
             TextField("Title Here", text: $title)
@@ -64,14 +65,7 @@ struct CreateTabView: View {
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
                 Button("Cancel", systemImage: "xmark", role: .cancel) {
-                    dismissKeyboard()
-                    let isTitleEmpty = title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                    let isDescEmpty = desc.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                    if isTitleEmpty && isDescEmpty {
-                        activeTab = .notes
-                    } else {
-                        reset()
-                    }
+                    cancel()
                 }
             }
             
@@ -94,6 +88,7 @@ struct CreateTabView: View {
             Text("Can't save without the title or description. Try again!")
         }
     }
+    //----------------- End of UI Code -----------------//
     
     func saveNote() {
         let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -117,6 +112,27 @@ struct CreateTabView: View {
         title = ""
         desc = ""
         editingNote = nil
+    }
+
+    func cancel() {
+        dismissKeyboard()
+        
+        if editingNote != nil {
+            // Navigate back when editing an existing note
+            activeTab = .notes
+            reset()
+        } else {
+            let hasContent = !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
+                             !desc.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            
+            if hasContent {
+                // If content is typed for a new note, "Cancel" acts as a "Clear" action
+                reset()
+            } else {
+                // If it is already empty, navigate back
+                activeTab = .notes
+            }
+        }
     }
 
     func dismissKeyboard() {

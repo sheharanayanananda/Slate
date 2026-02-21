@@ -22,6 +22,8 @@ struct SlateTabView: View {
     init(onSelect: @escaping (SlateModel) -> Void = { _ in }) {
         self.onSelect = onSelect
     }
+
+    //----------------- Start of UI Code -----------------//
     var body: some View {
         List {
             ForEach(notes) { note in
@@ -100,6 +102,7 @@ struct SlateTabView: View {
                 .presentationDetents([.medium, .large])
         }
     }
+    //----------------- End of UI Code -----------------//
 }
 
 #Preview {

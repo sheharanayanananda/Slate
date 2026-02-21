@@ -11,7 +11,7 @@ import SwiftData
 struct ContentView: View {
 
     enum TabIdentifier: Hashable {
-        case notes, create, profile
+        case notes, create, settings
     }
 
     @State private var activeTab: TabIdentifier = .notes
@@ -19,6 +19,7 @@ struct ContentView: View {
 
     @Environment(\.modelContext) private var context
 
+    //----------------- Start of UI Code -----------------//
     var body: some View {
         TabView(selection: $activeTab) {
             Tab("Slate", systemImage: "xmark.triangle.circle.square", value: .notes) {
@@ -37,13 +38,14 @@ struct ContentView: View {
                 }
             }
 
-            Tab("Settings", systemImage: "gear", value: .profile) {
+            Tab("Settings", systemImage: "gear", value: .settings) {
                 NavigationStack {
-                    ProfileTabView()
+                    SettingsTabView()
                 }
             }
         }
     }
+    //----------------- End of UI Code -----------------//
 }
 
 #Preview {
