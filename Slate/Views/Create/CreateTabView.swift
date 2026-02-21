@@ -7,7 +7,6 @@
 
 import SwiftUI
 import SwiftData
-import Vision
 
 struct CreateTabView: View {
     @State private var title: String = ""
@@ -17,8 +16,6 @@ struct CreateTabView: View {
 
     @Environment(\.modelContext) private var context
     @State private var showEmptyWarning: Bool = false
-    @State private var showCamera: Bool = false
-    @State private var recognizedImage: UIImage?
 
     //----------------- Start of UI Code -----------------//
     var body: some View {
@@ -53,25 +50,12 @@ struct CreateTabView: View {
                 desc = note.desc
             }
         }
-        .sheet(isPresented: $showCamera, onDismiss: {
-            if let image = recognizedImage {
-                recognizeText(from: image)
-            }
-        }) {
-            ImagePicker(image: $recognizedImage)
-        }
         .navigationTitle(editingNote == nil ? "New Note" : "Edit Note")
         .toolbarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
                 Button("Cancel", systemImage: "xmark", role: .cancel) {
                     cancel()
-                }
-            }
-            
-            ToolbarItem(placement: .primaryAction) {
-                Button("AI Lense", systemImage: "document.viewfinder") {
-                    showCamera = true
                 }
             }
                         
@@ -139,34 +123,6 @@ struct CreateTabView: View {
         #if canImport(UIKit)
         UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
         #endif
-    }
-    
-    func recognizeText(from image: UIImage) {
-        guard let cgImage = image.cgImage else { return }
-        
-        let request = VNRecognizeTextRequest { request, error in
-            guard let observations = request.results as? [VNRecognizedTextObservation], error == nil else {
-                return
-            }
-            
-            let text = observations.compactMap { $0.topCandidates(1).first?.string }.joined(separator: "\n")
-            
-            DispatchQueue.main.async {
-                self.desc = text
-                
-                let words = text.components(separatedBy: .whitespacesAndNewlines).filter { !$0.isEmpty }
-                if words.count >= 3 {
-                    self.title = words.prefix(3).joined(separator: " ")
-                } else {
-                    self.title = text
-                }
-            }
-        }
-        
-        request.recognitionLevel = .accurate
-        
-        let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
-        try? handler.perform([request])
     }
 }
 
