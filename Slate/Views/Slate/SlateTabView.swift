@@ -53,12 +53,36 @@ struct SlateTabView: View {
                         context.delete(note)
                     }
                 }
-                .swipeActions(edge: .leading, allowsFullSwipe: false) {
+                .swipeActions(edge: .leading, allowsFullSwipe: true) {
                     Button("Share", systemImage: "square.and.arrow.up") {
                         noteToShare = note
                         showShareOptions = true
                     }
                     .tint(.accentColor)
+                }
+                .confirmationDialog("Share Slate", isPresented: Binding(
+                    get: { showShareOptions && noteToShare == note },
+                    set: { if !$0 { showShareOptions = false; noteToShare = nil } }
+                ), titleVisibility: .visible) {
+                    Button("Share Richtext") {
+                        let itemSource = NoteItemSource(note: note)
+                        shareItems = [itemSource]
+                        showShareSheet = true
+                    }
+                    
+                    Button("Save as PDF") {
+                        if let pdfURL = NoteSharingHelper.generatePDF(for: note) {
+                            shareItems = [pdfURL]
+                            showShareSheet = true
+                        }
+                    }
+                    
+                    Button("Save as Text") {
+                        if let textURL = NoteSharingHelper.generateTextFile(for: note) {
+                            shareItems = [textURL]
+                            showShareSheet = true
+                        }
+                    }
                 }
             }
         }
@@ -67,36 +91,13 @@ struct SlateTabView: View {
                 ContentUnavailableView(
                     "Hello !",
                     systemImage: "sparkles",
-                    description: Text("Let's note down something useful!")
+                    description: Text("Let's slate down something useful!")
                 )
                 // If you want broader OS support, see the fallback below
             }
         }
         .navigationTitle("Slate")
         .toolbarTitleDisplayMode(.automatic)
-        .confirmationDialog("Share Note", isPresented: $showShareOptions, titleVisibility: .visible) {
-            Button("Share Richtext") {
-                if let note = noteToShare {
-                    let itemSource = NoteItemSource(note: note)
-                    shareItems = [itemSource]
-                    showShareSheet = true
-                }
-            }
-            
-            Button("Save as PDF") {
-                if let note = noteToShare, let pdfURL = NoteSharingHelper.generatePDF(for: note) {
-                    shareItems = [pdfURL]
-                    showShareSheet = true
-                }
-            }
-            
-            Button("Save as Text") {
-                if let note = noteToShare, let textURL = NoteSharingHelper.generateTextFile(for: note) {
-                    shareItems = [textURL]
-                    showShareSheet = true
-                }
-            }
-        }
         .sheet(isPresented: $showShareSheet) {
             ShareSheet(activityItems: shareItems)
                 .presentationDetents([.medium, .large])

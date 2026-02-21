@@ -25,7 +25,6 @@ struct ContentView: View {
             Tab("Slate", systemImage: "xmark.triangle.circle.square", value: .notes) {
                 NavigationStack {
                     SlateTabView { note in
-                        // Prefill fields and switch to Create tab for editing
                         editingNote = note
                         activeTab = .create
                     }
