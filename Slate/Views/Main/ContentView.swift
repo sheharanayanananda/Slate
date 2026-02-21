@@ -11,7 +11,7 @@ import SwiftData
 struct ContentView: View {
 
     enum TabIdentifier: Hashable {
-        case notes, create, settings
+        case notes, create, intelligence, settings
     }
 
     @State private var activeTab: TabIdentifier = .notes
@@ -36,12 +36,18 @@ struct ContentView: View {
                     CreateTabView(editingNote: $editingNote, activeTab: $activeTab)
                 }
             }
-
-            Tab("Settings", systemImage: "gear", value: .settings) {
+            
+            Tab("Intelligence", systemImage: "apple.intelligence", value: .intelligence) {
                 NavigationStack {
-                    SettingsTabView()
+                    IntelligenceTabView()
                 }
             }
+
+            // Tab("Settings", systemImage: "gear", value: .settings) {
+            //     NavigationStack {
+            //         SettingsTabView()
+            //     }
+            // }
         }
     }
     //----------------- End of UI Code -----------------//
