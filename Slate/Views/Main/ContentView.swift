@@ -43,11 +43,11 @@ struct ContentView: View {
                 }
             }
 
-            // Tab("Settings", systemImage: "gear", value: .settings) {
-            //     NavigationStack {
-            //         SettingsTabView()
-            //     }
-            // }
+//             Tab("Settings", systemImage: "gear", value: .settings) {
+//                 NavigationStack {
+//                     SettingsTabView()
+//                 }
+//             }
         }
     }
     //----------------- End of UI Code -----------------//

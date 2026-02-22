@@ -8,40 +8,46 @@
 import SwiftUI
 
 struct IntelligenceTabView: View {
+    @State private var activeShortcut: ShortcutType?
+    
     //----------------- Start of UI Code -----------------//
     var body: some View {
-        List {
-            Section(header: Text("AI Features")) {
-                Button(action: {
-                    // Placeholder for Image to Intelligent Notes
-                }) {
-                    HStack {
-                        Image(systemName: "photo.badge.plus.fill")
-                            .foregroundColor(.blue)
-                        Text("Image to Intelligent Notes")
-                            .foregroundColor(.primary)
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 16) {
+                            ShortcutCard(
+                                title: "Image To Note",
+                                iconName: "text.viewfinder",
+                                color: Color(.blue),
+                                action: {
+                                    activeShortcut = .imageToNote
+                                }
+                            )
+                            ShortcutCard(
+                                title: "Transcript",
+                                iconName: "waveform",
+                                color: Color(.pink),
+                                action: {
+                                    activeShortcut = .transcript
+                                }
+                            )
+                        }
+                        .sheet(item: $activeShortcut) { type in
+                            ShortcutSheet(type: type)
+                        }
+                        .padding(.horizontal)
                     }
                 }
-                
-                Button(action: {
-                    // Placeholder for Conversation Transcript Gen
-                }) {
-                    HStack {
-                        Image(systemName: "mic.and.signal.meter.fill")
-                            .foregroundColor(.purple)
-                        Text("Conversation Transcript Gen")
-                            .foregroundColor(.primary)
-                    }
-                }
+                .padding(.vertical)
             }
+            .navigationTitle("Intelligence")
         }
-        .navigationTitle("Intelligence")
     }
     //----------------- End of UI Code -----------------//
 }
 
 #Preview {
-    NavigationStack {
-        IntelligenceTabView()
-    }
+    ContentView()
 }
