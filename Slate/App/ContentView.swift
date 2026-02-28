@@ -39,7 +39,7 @@ struct ContentView: View {
             
             Tab("Intelligence", systemImage: "apple.intelligence", value: .intelligence) {
                 NavigationStack {
-                    IntelligenceTabView()
+                    IntelligenceTabView(editingNote: $editingNote, activeTab: $activeTab)
                 }
             }
 

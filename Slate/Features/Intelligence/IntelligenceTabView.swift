@@ -8,6 +8,8 @@
 import SwiftUI
 
 struct IntelligenceTabView: View {
+    @Binding var editingNote: SlateModel?
+    @Binding var activeTab: ContentView.TabIdentifier
     @State private var activeShortcut: ShortcutType?
     
     //----------------- Start of UI Code -----------------//
@@ -46,7 +48,7 @@ struct IntelligenceTabView: View {
                     )
                 }
                 .sheet(item: $activeShortcut) { type in
-                    ShortcutSheet(type: type)
+                    ShortcutSheet(type: type, editingNote: $editingNote, activeTab: $activeTab)
                 }
                 .padding()
             }

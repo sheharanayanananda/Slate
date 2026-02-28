@@ -48,5 +48,5 @@ struct ShortcutCard: View {
 }
 
 #Preview {
-    IntelligenceTabView()
+    ContentView()
 }
