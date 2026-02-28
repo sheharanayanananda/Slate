@@ -23,7 +23,7 @@ struct CreateTabView: View {
             TextField("Title Here", text: $title)
                 .font(.title3)
                 .padding(.horizontal, 5)
-            TextEditor(text: $desc)
+            RichTextEditor(text: $desc)
                 .frame(minHeight: 160)
                 .overlay(alignment: .topLeading) {
                     if desc.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
@@ -84,10 +84,15 @@ struct CreateTabView: View {
         if let note = editingNote {
             note.title = trimmedTitle
             note.desc = trimmedDesc
+            if note.modelContext == nil {
+                context.insert(note)
+            }
         } else {
             let note = SlateModel(title: trimmedTitle, desc: trimmedDesc)
             context.insert(note)
         }
+        
+        try? context.save()
         reset()
         activeTab = .notes
     }

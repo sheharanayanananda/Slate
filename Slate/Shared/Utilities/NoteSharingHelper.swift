@@ -15,18 +15,16 @@ struct NoteSharingHelper {
             .font: UIFont.systemFont(ofSize: 24, weight: .bold)
         ]
         
-        let descAttributes: [NSAttributedString.Key: Any] = [
-            .font: UIFont.systemFont(ofSize: 17)
-        ]
-        
         let attributedString = NSMutableAttributedString(string: note.title + "\n\n", attributes: titleAttributes)
-        attributedString.append(NSAttributedString(string: note.desc, attributes: descAttributes))
+        
+        // Append the actual parsed rich text
+        attributedString.append(note.attributedDesc)
         
         return attributedString
     }
     
     static func generateMarkdownText(for note: SlateModel) -> String {
-        return "*\(note.title)*\n\n\(note.desc)"
+        return "*\(note.title)*\n\n\(note.previewText)"
     }
     
     static func generatePDF(for note: SlateModel) -> URL? {
@@ -50,7 +48,7 @@ struct NoteSharingHelper {
     }
     
     static func generateTextFile(for note: SlateModel) -> URL? {
-        let text = "\(note.title)\n\n\(note.desc)"
+        let text = "\(note.title)\n\n\(note.previewText)"
         let fileURL = FileManager.default.temporaryDirectory.appendingPathComponent("\(note.title).txt")
         
         do {

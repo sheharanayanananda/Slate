@@ -22,3 +22,25 @@ final class SlateModel: Identifiable {
         self.created_at = created_at
     }
 }
+
+import UIKit
+
+extension SlateModel {
+    var attributedDesc: NSAttributedString {
+        if desc.hasPrefix("rtf:"), let data = Data(base64Encoded: String(desc.dropFirst(4))),
+           let attr = try? NSAttributedString(data: data, options: [.documentType: NSAttributedString.DocumentType.rtf], documentAttributes: nil) {
+            return attr
+        }
+        
+        let mdOptions = AttributedString.MarkdownParsingOptions(interpretedSyntax: .inlineOnlyPreservingWhitespace)
+        if let attrStr = try? AttributedString(markdown: desc, options: mdOptions) {
+            return NSAttributedString(attrStr)
+        }
+        
+        return NSAttributedString(string: desc)
+    }
+    
+    var previewText: String {
+        return attributedDesc.string
+    }
+}

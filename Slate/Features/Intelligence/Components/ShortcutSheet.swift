@@ -213,7 +213,7 @@ struct ShortcutSheet: View {
             }
         }
         
-        let desc = descLines.joined(separator: "\\n").trimmingCharacters(in: .whitespacesAndNewlines)
+        let desc = descLines.joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)
         return (title, desc)
     }
 }
