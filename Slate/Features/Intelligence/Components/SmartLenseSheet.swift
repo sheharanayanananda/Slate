@@ -78,7 +78,8 @@ struct SmartLenseSheet: View {
             .overlay {
                 if isProcessing {
                     ZStack {
-                        Color.black.opacity(0.4).ignoresSafeArea()
+                        Color.black.opacity(0.2).ignoresSafeArea()
+
                         VStack(spacing: 16) {
                             if processStatus == "Process Completed" {
                                 Image(systemName: "checkmark.circle.fill")
@@ -92,14 +93,73 @@ struct SmartLenseSheet: View {
                                 .font(.headline)
                         }
                         .padding(24)
-                        .background {
-                            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                .fill(Color(uiColor: .systemBackground))
-                        }
-                        .shadow(radius: 10)
+                        .background(
+                            ZStack {
+                                // Base glass material
+                                RoundedRectangle(cornerRadius: 30, style: .continuous)
+                                    .fill(.ultraThinMaterial)
+
+                                // Soft inner glow for depth
+                                RoundedRectangle(cornerRadius: 30, style: .continuous)
+                                    .fill(
+                                        LinearGradient(
+                                            colors: [
+                                                Color.white.opacity(0.12),
+                                                Color.white.opacity(0.02)
+                                            ],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        )
+                                    )
+                                    .blendMode(.overlay)
+
+                                // Subtle top highlight to sell the glass effect
+                                RoundedRectangle(cornerRadius: 30, style: .continuous)
+                                    .stroke(
+                                        LinearGradient(
+                                            colors: [
+                                                Color.white.opacity(0.35),
+                                                Color.white.opacity(0.05)
+                                            ],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        ),
+                                        lineWidth: 1
+                                    )
+                            }
+                        )
+                        .shadow(color: Color.black.opacity(0.25), radius: 30, x: 0, y: 12)
+                        .padding()
                     }
+                    .transition(.opacity)
                 }
             }
+//            .overlay {
+//                if isProcessing {
+//                    ZStack {
+//                        Color.black.opacity(0.4).ignoresSafeArea()
+//                        VStack(spacing: 16) {
+//                            if processStatus == "Process Completed" {
+//                                Image(systemName: "checkmark.circle.fill")
+//                                    .font(.system(size: 40))
+//                                    .foregroundColor(.green)
+//                            } else {
+//                                ProgressView()
+//                                    .controlSize(.large)
+//                            }
+//                            Text(processStatus)
+//                                .font(.headline)
+//                        }
+//                        .padding(24)
+//                        .background {
+//                            RoundedRectangle(cornerRadius: 40, style: .continuous)
+//                                .fill(.clear)
+//                                .glassEffect(Glass.clear.tint(.clear), in: .rect(cornerRadius: 30))
+//                        }
+//                        .shadow(color: .black.opacity(0.2), radius: 10, x: 0, y: 5)
+//                    }
+//                }
+//            }
         }
     }
     
