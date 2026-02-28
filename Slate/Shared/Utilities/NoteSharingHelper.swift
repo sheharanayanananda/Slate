@@ -73,8 +73,12 @@ class NoteItemSource: NSObject, UIActivityItemSource {
     }
     
     func activityViewController(_ activityViewController: UIActivityViewController, itemForActivityType activityType: UIActivity.ActivityType?) -> Any? {
-        if activityType == .message || activityType == .mail {
-            return NoteSharingHelper.generateRichText(for: note)
+        if activityType == .message || activityType == .mail || activityType?.rawValue == "com.apple.mobilenotes.SharingExtension" {
+            let richText = NoteSharingHelper.generateRichText(for: note)
+            if let rtfData = try? richText.data(from: NSRange(location: 0, length: richText.length), documentAttributes: [.documentType: NSAttributedString.DocumentType.rtf]) {
+                return rtfData
+            }
+            return richText
         } else {
             return NoteSharingHelper.generateMarkdownText(for: note)
         }
