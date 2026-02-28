@@ -1,20 +1,11 @@
 //
-//  ShortcutSheet.swift
+//  SmartLenseSheet.swift
 //  Slate
 //
 
 import SwiftUI
 
-enum ShortcutType: Identifiable {
-    case imageToNote
-    case transcript
-    case summerize
-    
-    var id: Self { self }
-}
-
-struct ShortcutSheet: View {
-    let type: ShortcutType
+struct SmartLenseSheet: View {
     @Binding var editingNote: SlateModel?
     @Binding var activeTab: ContentView.TabIdentifier
     @Environment(\.dismiss) private var dismiss
@@ -27,86 +18,59 @@ struct ShortcutSheet: View {
     
     var body: some View {
         NavigationStack {
-            Group {
-                switch type {
-                case .imageToNote:
-                    ZStack {
-                        if let image = capturedImage {
-                            Image(uiImage: image)
-                                .resizable()
-                                .scaledToFill()
-                                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                                .clipped()
-                                .ignoresSafeArea()
-                                .toolbar {
-                                    ToolbarItem(placement: .navigationBarLeading) {
-                                        Button(role: .cancel, action: {
-                                            capturedImage = nil
-                                            presentationDetent = .medium
-                                        })
-//                                        Button("Retake") {
-//                                            capturedImage = nil
-//                                            presentationDetent = .medium
-//                                        }
-                                    }
-                                    ToolbarItem(placement: .navigationBarTrailing) {
-                                        Button("Process") {
-                                            if let image = capturedImage {
-                                                createAINote(with: image)
-                                            }
-                                        }
-                                        .disabled(isProcessing)
-                                        .buttonStyle(.glassProminent)
-                                        .tint(.accentColor)
+            ZStack {
+                if let image = capturedImage {
+                    Image(uiImage: image)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .clipped()
+                        .ignoresSafeArea()
+                        .toolbar {
+                            ToolbarItem(placement: .navigationBarLeading) {
+                                Button(role: .cancel, action: {
+                                    capturedImage = nil
+                                    presentationDetent = .medium
+                                })
+                            }
+                            ToolbarItem(placement: .navigationBarTrailing) {
+                                Button("Process") {
+                                    if let image = capturedImage {
+                                        createAINote(with: image)
                                     }
                                 }
-                                .toolbarBackground(.hidden, for: .navigationBar)
-                        } else {
-                            CameraView(takePhoto: $takePhoto) { image in
-                                if let image = image {
-                                    capturedImage = image
-                                }
+                                .disabled(isProcessing)
+                                .buttonStyle(.glassProminent)
+                                .tint(.accentColor)
                             }
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            .ignoresSafeArea()
-                            
-                            VStack {
-                                Spacer()
-                                Button(action: {
-                                    takePhoto = true
-                                }) {
-                                    Circle()
-                                        .fill(Color.white.opacity(0.5))
-                                        .frame(width: 80, height: 80)
-                                        .shadow(radius: 5)
-                                        .overlay(
-                                            Circle()
-                                                .stroke(Color.white, lineWidth: 5)
-                                        )
-                                }
-                                .padding(.bottom, 30)
-                            }
-                            .toolbar(.hidden, for: .navigationBar)
+                        }
+                        .toolbarBackground(.hidden, for: .navigationBar)
+                } else {
+                    CameraView(takePhoto: $takePhoto) { image in
+                        if let image = image {
+                            capturedImage = image
                         }
                     }
-                case .transcript:
-                    VStack(spacing: 16) {
-                        Text("Transcript")
-                            .font(.title2)
-                            .bold()
-                        Text("Coming Soon…")
-                            .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .ignoresSafeArea()
+                    
+                    VStack {
+                        Spacer()
+                        Button(action: {
+                            takePhoto = true
+                        }) {
+                            Circle()
+                                .fill(Color.white.opacity(0.5))
+                                .frame(width: 80, height: 80)
+                                .shadow(radius: 5)
+                                .overlay(
+                                    Circle()
+                                        .stroke(Color.white, lineWidth: 5)
+                                )
+                        }
+                        .padding(.bottom, 30)
                     }
-                    .padding()
-                case .summerize:
-                    VStack(spacing: 16) {
-                        Text("Summerize")
-                            .font(.title2)
-                            .bold()
-                        Text("Coming Soon…")
-                            .foregroundStyle(.secondary)
-                    }
-                    .padding()
+                    .toolbar(.hidden, for: .navigationBar)
                 }
             }
             .navigationBarTitleDisplayMode(.inline)

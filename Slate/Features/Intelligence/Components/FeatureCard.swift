@@ -1,11 +1,11 @@
 //
-//  ShortcutCard.swift
+//  FeatureCard.swift
 //  Slate
 //
 
 import SwiftUI
 
-struct ShortcutCard: View {
+struct FeatureCard: View {
     var title: String
     var iconName: String
     var color: Color

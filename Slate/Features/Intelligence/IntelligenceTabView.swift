@@ -10,7 +10,7 @@ import SwiftUI
 struct IntelligenceTabView: View {
     @Binding var editingNote: SlateModel?
     @Binding var activeTab: ContentView.TabIdentifier
-    @State private var activeShortcut: ShortcutType?
+    @State private var activeFeature: FeatureType?
     
     //----------------- Start of UI Code -----------------//
     var body: some View {
@@ -22,33 +22,33 @@ struct IntelligenceTabView: View {
                 ]
                 
                 LazyVGrid(columns: columns, spacing: 16) {
-                    ShortcutCard(
-                        title: "AI Lense",
-                        iconName: "camera.aperture",
+                    FeatureCard(
+                        title: "Smart Lense",
+                        iconName: "sparkles",
                         color: Color(.blue),
                         action: {
-                            activeShortcut = .imageToNote
+                            activeFeature = .smartLense
                         }
                     )
-                    ShortcutCard(
+                    FeatureCard(
                         title: "Transcript",
                         iconName: "waveform",
                         color: Color(.pink),
                         action: {
-                            activeShortcut = .transcript
+                            activeFeature = .transcript
                         }
                     )
-                    ShortcutCard(
-                        title: "Summerize",
-                        iconName: "text.pad.header",
+                    FeatureCard(
+                        title: "Summarize",
+                        iconName: "list.bullet.below.rectangle",
                         color: Color(.orange),
                         action: {
-                            activeShortcut = .summerize
+                            activeFeature = .summarize
                         }
                     )
                 }
-                .sheet(item: $activeShortcut) { type in
-                    ShortcutSheet(type: type, editingNote: $editingNote, activeTab: $activeTab)
+                .sheet(item: $activeFeature) { type in
+                    FeatureSheet(type: type, editingNote: $editingNote, activeTab: $activeTab)
                 }
                 .padding()
             }
