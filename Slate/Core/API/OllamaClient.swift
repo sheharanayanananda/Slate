@@ -29,7 +29,7 @@ final class OllamaClient {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("Bearer 02bde54ee078433e91088f9973f356f8.6gCblr8J-w_2qcb1ayUv6EQb", forHTTPHeaderField: "Authorization")
+        request.setValue("Bearer \(Secrets.ollamaBearerToken)", forHTTPHeaderField: "Authorization")
         
         let body: [String: Any] = [
             "model": modelName,
