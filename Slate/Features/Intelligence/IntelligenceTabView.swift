@@ -14,33 +14,41 @@ struct IntelligenceTabView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 16) {
-                            ShortcutCard(
-                                title: "Image To Note",
-                                iconName: "text.viewfinder",
-                                color: Color(.blue),
-                                action: {
-                                    activeShortcut = .imageToNote
-                                }
-                            )
-                            ShortcutCard(
-                                title: "Transcript",
-                                iconName: "waveform",
-                                color: Color(.pink),
-                                action: {
-                                    activeShortcut = .transcript
-                                }
-                            )
+                let columns = [
+                    GridItem(.flexible(), spacing: 16),
+                    GridItem(.flexible(), spacing: 16)
+                ]
+                
+                LazyVGrid(columns: columns, spacing: 16) {
+                    ShortcutCard(
+                        title: "AI Lense",
+                        iconName: "camera.aperture",
+                        color: Color(.blue),
+                        action: {
+                            activeShortcut = .imageToNote
                         }
-                        .sheet(item: $activeShortcut) { type in
-                            ShortcutSheet(type: type)
+                    )
+                    ShortcutCard(
+                        title: "Transcript",
+                        iconName: "waveform",
+                        color: Color(.pink),
+                        action: {
+                            activeShortcut = .transcript
                         }
-                        .padding(.horizontal)
-                    }
+                    )
+                    ShortcutCard(
+                        title: "Summerize",
+                        iconName: "text.pad.header",
+                        color: Color(.orange),
+                        action: {
+                            activeShortcut = .summerize
+                        }
+                    )
                 }
-                .padding(.vertical)
+                .sheet(item: $activeShortcut) { type in
+                    ShortcutSheet(type: type)
+                }
+                .padding()
             }
             .navigationTitle("Intelligence")
         }

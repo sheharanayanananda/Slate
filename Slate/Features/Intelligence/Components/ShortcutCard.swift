@@ -32,14 +32,14 @@ struct ShortcutCard: View {
                 Spacer()
                 
                 Text(title)
-                    .font(.headline)
-                    .fontWeight(.bold)
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
                     .foregroundColor(.white)
                     .multilineTextAlignment(.leading)
                     .lineLimit(2)
             }
             .padding(16)
-            .frame(width: 220, height: 130)
+            .frame(maxWidth: .infinity, minHeight: 130)
             .background(color)
             .clipShape(RoundedRectangle(cornerRadius: 30, style: .continuous))
         }
@@ -48,10 +48,5 @@ struct ShortcutCard: View {
 }
 
 #Preview {
-    ShortcutCard(
-        title: "Start Pomodoro",
-        iconName: "timer",
-        color: Color(red: 247/255, green: 106/255, blue: 115/255),
-        action: {}
-    )
+    IntelligenceTabView()
 }
