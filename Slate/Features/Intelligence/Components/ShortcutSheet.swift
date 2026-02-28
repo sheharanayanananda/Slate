@@ -23,7 +23,7 @@ struct ShortcutSheet: View {
     @State private var takePhoto = false
     @State private var presentationDetent: PresentationDetent = .medium
     @State private var isProcessing: Bool = false
-    @State private var processStatus: String = "Analyzing Image..."
+    @State private var processStatus: String = "Analyzing Image"
     
     var body: some View {
         NavigationStack {
@@ -141,28 +141,31 @@ struct ShortcutSheet: View {
     
     func createAINote(with image: UIImage) {
         isProcessing = true
-        processStatus = "Analyzing Image..."
+        processStatus = "Analyzing Image"
         
         Task {
             do {
                 let client = OllamaClient()
                 let prompt = """
-                Act as an intelligent Note-Taking Assistant. Analyze the provided image and generate a structured Markdown note based on what you see.
+                Act as an intelligent, highly observant Note-Taking Assistant. Deeply analyze the provided image and generate a highly accurate, structured Markdown note that captures both the literal content and the underlying context. You are encouraged to use relevant emojis throughout the note to make it engaging and visually scannable.
 
                 ### STRATEGY:
-                1. **If the image is text-heavy (document, receipt, whiteboard):** Extract the key information and organize it logically. Do not just transcribe; summarize.
-                2. **If the image is an object (flower, device, landmark):** Identify the item, provide a brief description, and suggest why the user might be saving it (e.g., care instructions for a plant, specs for a gadget).
+                1. **For text-heavy images (documents, receipts, whiteboards):** Extract the most critical information, group related concepts logically, and provide a clear, synthesized summary rather than a raw transcription. Highlight key figures, dates, or concepts.
+                2. **For objects or scenes (plants, gadgets, landmarks, environments):** Accurately identify the main subjects, describe their key characteristics, and infer the user's intent to provide intelligent contextual suggestions (e.g., detailed care instructions, technical specifications, or historical context).
+                3. **For abstract or complex diagrams:** Break down the core components, explain the relationships, and summarize the overall purpose.
 
                 ### OUTPUT STRUCTURE:
-                - **Title**: A short, punchy title for the note.
-                - **Note Type**: (e.g., Document, Receipt, Nature, Tech, Reminder).
-                - **Summary**: A 1-2 sentence overview of the image contents.
-                - **Detailed Info**: Use bullet points for extracted text, dates, prices, or physical characteristics.
-                - **Action Items**: 2-3 logical next steps (e.g., 'Add to expense report,' 'Water twice a week,' or 'Research this model').
-                - **Tags**: 3-5 relevant hashtags.
+                - **Title**: A concise, descriptive, and punchy title for the note (maximum 3 words, include a relevant emoji).
+                - **Note Type**: Categorize the content (e.g., 📄 Document, 🧾 Receipt, 🌿 Nature, 💻 Tech, 💡 Idea).
+                - **Summary**: A smart, 1-2 sentence overview synthesizing the image's core value or main takeaway.
+                - **Key Details**: Use organized bullet points to present extracted text, specifications, amounts, or defining physical traits clearly.
+                - **Actionable Insights**: 2-3 highly relevant, logical next steps based on the context (e.g., '📅 Schedule follow-up meeting,' '💧 Water every 3 days,' '🔎 Research compatibility').
+                - **Tags**: 3-5 relevant, searchable hashtags.
 
-                ### STYLE GUIDELINE:
-                Be concise and professional. Do not say 'In this image' or 'I see.' Simply present the note as if the user wrote it themselves.
+                ### STYLE GUIDELINES:
+                - Be concise, professional, and intelligent.
+                - Integrate emojis naturally to enhance readability.
+                - Never use phrasing like 'In this image,' 'I can see,' or 'The image shows.' Present the information directly and confidently as if the user authored it.
                 """
                 let response = try await client.generate(prompt: prompt, image: image)
                 let parsed = parseResponse(response)

@@ -34,10 +34,11 @@ final class OllamaClient {
         let body: [String: Any] = [
             "model": modelName,
             "prompt": prompt,
-            "images": [image.jpegData(compressionQuality: 0.8)!.base64EncodedString()],
+            "thinking": "low",
+            "images": [image.jpegData(compressionQuality: 0.9)!.base64EncodedString()],
             "stream": false,
             "options": [
-                "temperature": 0.1,
+                "temperature": 0.2,
                 "top_p": 0.9,
                 "num_predict": 1024
             ]
