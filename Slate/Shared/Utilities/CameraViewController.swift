@@ -86,7 +86,32 @@ class CameraViewController: UIViewController {
 
 extension CameraViewController: AVCapturePhotoCaptureDelegate {
     func photoOutput(_ output: AVCapturePhotoOutput, didFinishProcessingPhoto photo: AVCapturePhoto, error: Error?) {
-        let image = photo.fileDataRepresentation().flatMap { UIImage(data: $0) }
-        onPhotoCapture?(image)
+        guard let data = photo.fileDataRepresentation(), let image = UIImage(data: data) else {
+            onPhotoCapture?(nil)
+            return
+        }
+        
+        guard let cgImage = image.cgImage else {
+            onPhotoCapture?(image)
+            return
+        }
+        
+        let outputRect = previewLayer.metadataOutputRectConverted(fromLayerRect: previewLayer.bounds)
+        
+        let width = CGFloat(cgImage.width)
+        let height = CGFloat(cgImage.height)
+        let cropRect = CGRect(
+            x: outputRect.origin.x * width,
+            y: outputRect.origin.y * height,
+            width: outputRect.size.width * width,
+            height: outputRect.size.height * height
+        )
+        
+        if let croppedCgImage = cgImage.cropping(to: cropRect) {
+            let croppedImage = UIImage(cgImage: croppedCgImage, scale: image.scale, orientation: image.imageOrientation)
+            onPhotoCapture?(croppedImage)
+        } else {
+            onPhotoCapture?(image)
+        }
     }
 }

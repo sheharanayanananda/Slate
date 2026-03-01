@@ -60,12 +60,15 @@ struct SmartLenseSheet: View {
                             takePhoto = true
                         }) {
                             Circle()
-                                .fill(Color.white.opacity(0.5))
+                                .fill(.clear)
+                                .glassEffect(Glass.clear.tint(.clear), in: .rect(cornerRadius: 100))
+//                                .fill(Color.white.opacity(0.5))
                                 .frame(width: 80, height: 80)
                                 .shadow(radius: 5)
                                 .overlay(
                                     Circle()
-                                        .stroke(Color.white, lineWidth: 5)
+                                        .stroke(Color.white, lineWidth: 7)
+                                        .opacity(0.4)
                                 )
                         }
                         .padding(.bottom, 30)
@@ -97,7 +100,9 @@ struct SmartLenseSheet: View {
                             ZStack {
                                 // Base glass material
                                 RoundedRectangle(cornerRadius: 30, style: .continuous)
-                                    .fill(.ultraThinMaterial)
+                                    .fill(.clear)
+                                    .glassEffect(Glass.clear.tint(.clear), in: .rect(cornerRadius: 30))
+//                                    .fill(.ultraThinMaterial)
 
                                 // Soft inner glow for depth
                                 RoundedRectangle(cornerRadius: 30, style: .continuous)
