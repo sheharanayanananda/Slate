@@ -15,11 +15,14 @@ struct SlateTabView: View {
     @State private var noteToShare: SlateModel?
     @State private var showShareOptions = false
     @State private var showShareSheet = false
+    @State private var showSettings = false
     @State private var shareItems: [Any] = []
 
+    let onCreate: () -> Void
     let onSelect: (SlateModel) -> Void
 
-    init(onSelect: @escaping (SlateModel) -> Void = { _ in }) {
+    init(onCreate: @escaping () -> Void = {}, onSelect: @escaping (SlateModel) -> Void = { _ in }) {
+        self.onCreate = onCreate
         self.onSelect = onSelect
     }
 
@@ -99,12 +102,24 @@ struct SlateTabView: View {
         .toolbarTitleDisplayMode(.automatic)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
-                Button("Cancel", systemImage: "person.fill") {}
+                Button("Create", systemImage: "plus") {
+                    onCreate()
+                }
+            }
+            ToolbarItem(placement: .navigation) {
+                Button("Settings", systemImage: "gear") {
+                    showSettings = true
+                }
             }
         }
         .sheet(isPresented: $showShareSheet) {
             ShareSheet(activityItems: shareItems)
                 .presentationDetents([.medium, .large])
+        }
+        .popover(isPresented: $showSettings) {
+            NavigationStack {
+                SettingsTabView()
+            }
         }
     }
     //----------------- End of UI Code -----------------//

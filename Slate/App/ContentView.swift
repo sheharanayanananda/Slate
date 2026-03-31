@@ -11,11 +11,12 @@ import SwiftData
 struct ContentView: View {
 
     enum TabIdentifier: Hashable {
-        case notes, create, intelligence, settings
+        case notes, intelligence, settings
     }
 
     @State private var activeTab: TabIdentifier = .notes
     @State private var editingNote: SlateModel? = nil
+    @State private var showCreateSheet = false
 
     @Environment(\.modelContext) private var context
 
@@ -24,30 +25,31 @@ struct ContentView: View {
         TabView(selection: $activeTab) {
             Tab("Slate", systemImage: "scribble.variable", value: .notes) {
                 NavigationStack {
-                    SlateTabView { note in
-                        editingNote = note
-                        activeTab = .create
-                    }
-                }
-            }
-
-            Tab("Create", systemImage: "plus", value: .create) {
-                NavigationStack {
-                    CreateTabView(editingNote: $editingNote, activeTab: $activeTab)
+                    SlateTabView(
+                        onCreate: {
+                            editingNote = nil
+                            showCreateSheet = true
+                        },
+                        onSelect: { note in
+                            editingNote = note
+                            showCreateSheet = true
+                        }
+                    )
                 }
             }
             
-            Tab("Intelligence", systemImage: "apple.intelligence", value: .intelligence) {
+            Tab("Tools", systemImage: "sparkles", value: .intelligence) {
                 NavigationStack {
-                    IntelligenceTabView(editingNote: $editingNote, activeTab: $activeTab)
+                    IntelligenceTabView(editingNote: $editingNote, showCreateSheet: $showCreateSheet, activeTab: $activeTab)
                 }
             }
-
-//            Tab("Settings", systemImage: "gear", value: .settings) {
-//                NavigationStack {
-//                    SettingsTabView()
-//                }
-//            }
+        }
+        
+        .sheet(isPresented: $showCreateSheet) {
+            NavigationStack {
+                CreateTabView(editingNote: $editingNote, activeTab: $activeTab)
+            }
+            .presentationDetents([.medium, .large])
         }
     }
     //----------------- End of UI Code -----------------//
