@@ -90,14 +90,18 @@ struct SlateTabView: View {
             if notes.isEmpty {
                 ContentUnavailableView(
                     "Hello !",
-                    systemImage: "sparkles",
+                    systemImage: "scribble.variable",
                     description: Text("Let's slate down something useful!")
                 )
-                // If you want broader OS support, see the fallback below
             }
         }
         .navigationTitle("Slate")
         .toolbarTitleDisplayMode(.automatic)
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button("Cancel", systemImage: "person.fill") {}
+            }
+        }
         .sheet(isPresented: $showShareSheet) {
             ShareSheet(activityItems: shareItems)
                 .presentationDetents([.medium, .large])

@@ -59,5 +59,8 @@ struct IntelligenceTabView: View {
 }
 
 #Preview {
-    ContentView()
+    IntelligenceTabView(
+        editingNote: .constant(nil),
+        activeTab: .constant(.intelligence)
+    )
 }

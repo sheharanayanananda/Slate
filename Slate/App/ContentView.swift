@@ -22,7 +22,7 @@ struct ContentView: View {
     //----------------- Start of UI Code -----------------//
     var body: some View {
         TabView(selection: $activeTab) {
-            Tab("Slate", systemImage: "xmark.triangle.circle.square", value: .notes) {
+            Tab("Slate", systemImage: "scribble.variable", value: .notes) {
                 NavigationStack {
                     SlateTabView { note in
                         editingNote = note
@@ -43,11 +43,11 @@ struct ContentView: View {
                 }
             }
 
-//             Tab("Settings", systemImage: "gear", value: .settings) {
-//                 NavigationStack {
-//                     SettingsTabView()
-//                 }
-//             }
+//            Tab("Settings", systemImage: "gear", value: .settings) {
+//                NavigationStack {
+//                    SettingsTabView()
+//                }
+//            }
         }
     }
     //----------------- End of UI Code -----------------//

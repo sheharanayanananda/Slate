@@ -175,28 +175,30 @@ struct SmartLenseSheet: View {
         Task {
             do {
                 let client = OllamaClient()
-                let prompt = """
-                Act as an intelligent, highly observant Note-Taking Assistant. Deeply analyze the provided image and generate a highly accurate, structured Markdown note that captures both the literal content and the underlying context. You are encouraged to use relevant emojis throughout the note to make it engaging and visually scannable.
-
-                ### STRATEGY:
-                1. **For text-heavy images (documents, receipts, whiteboards):** Extract the most critical information, group related concepts logically, and provide a clear, synthesized summary rather than a raw transcription. Highlight key figures, dates, or concepts.
-                2. **For objects or scenes (plants, gadgets, landmarks, environments):** Accurately identify the main subjects, describe their key characteristics, and infer the user's intent to provide intelligent contextual suggestions (e.g., detailed care instructions, technical specifications, or historical context).
-                3. **For abstract or complex diagrams:** Break down the core components, explain the relationships, and summarize the overall purpose.
+                let systemPrompt = """
+                Act as an intelligent, highly observant, and proactive Note-Taking Assistant. Your primary goal is to analyze the provided image to deduce the *context and purpose* behind why the user took it, rather than just describing its literal contents.
+                
+                Think critically about the situation. For example:
+                - If it's a photo of an almost empty package (e.g., 2 cheese wedges left in an 8-pack), deduce that the user needs a reminder to buy more.
+                - If it's a photo of a broken device (e.g., a phone with a cracked screen), deduce that the user needs a reminder to get it repaired.
+                - If it's a document/receipt, deduce that the user wants to securely store its critical data (amounts, dates, key figures).
+                
+                Analyze the image, determine the user's implicit intent, and generate a highly accurate, structured Markdown note. Use relevant emojis naturally to make it engaging and visually scannable.
 
                 ### OUTPUT STRUCTURE:
-                - **Title**: A concise, descriptive, and punchy title for the note (maximum 3 words, include a relevant emoji).
-                - **Note Type**: Categorize the content (e.g., 📄 Document, 🧾 Receipt, 🌿 Nature, 💻 Tech, 💡 Idea).
-                - **Summary**: A smart, 1-2 sentence overview synthesizing the image's core value or main takeaway.
-                - **Key Details**: Use organized bullet points to present extracted text, specifications, amounts, or defining physical traits clearly.
-                - **Actionable Insights**: 2-3 highly relevant, logical next steps based on the context (e.g., '📅 Schedule follow-up meeting,' '💧 Water every 3 days,' '🔎 Research compatibility').
+                - **Title**: A concise, descriptive title capturing the *intent* (maximum 3-4 words, include a relevant emoji).
+                - **Note Type**: Categorize the content (e.g., 🛒 Shopping Reminder, 🔧 Repair Update, 📄 Document, 💡 Idea).
+                - **Summary**: A smart, 1-2 sentence overview synthesizing the situation and what it implies for the user.
+                - **Key Details**: Use bullet points to highlight the critical observations (e.g., "Only 2 wedges left out of 8", "Screen is heavily cracked at the bottom").
+                - **Actionable Insights**: 2-3 highly relevant, logical next steps based on your deduction of the situation (e.g., '🛒 Add cheese to grocery list for next trip,' '📅 Schedule repair appointment at Apple Store').
                 - **Tags**: 3-5 relevant, searchable hashtags.
 
                 ### STYLE GUIDELINES:
-                - Be concise, professional, and intelligent.
-                - Integrate emojis naturally to enhance readability.
-                - Never use phrasing like 'In this image,' 'I can see,' or 'The image shows.' Present the information directly and confidently as if the user authored it.
+                - Be concise, direct, and actionable.
+                - Never use phrasing like 'In this image,' 'I can see,' or 'The image shows.' Write as if the user is writing a helpful note to themselves.
                 """
-                let response = try await client.generate(prompt: prompt, image: image)
+                let userPrompt = "Analyze this image and create a contextually aware note based on the situation."
+                let response = try await client.generate(prompt: userPrompt, system: systemPrompt, image: image)
                 let parsed = parseResponse(response)
                 
                 await MainActor.run {

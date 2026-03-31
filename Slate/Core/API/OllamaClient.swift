@@ -24,14 +24,14 @@ final class OllamaClient {
         self.baseURL = baseURL
     }
 
-    func generate(prompt: String, image: UIImage) async throws -> String {
+    func generate(prompt: String, system: String? = nil, image: UIImage) async throws -> String {
         let url = URL(string: "/api/generate", relativeTo: baseURL)!
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(Secrets.ollamaBearerToken)", forHTTPHeaderField: "Authorization")
         
-        let body: [String: Any] = [
+        var body: [String: Any] = [
             "model": modelName,
             "prompt": prompt,
             "thinking": "low",
@@ -43,6 +43,11 @@ final class OllamaClient {
                 "num_predict": 1024
             ]
         ]
+        
+        if let system = system {
+            body["system"] = system
+        }
+        
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
         let (data, _) = try await URLSession.shared.data(for: request)
