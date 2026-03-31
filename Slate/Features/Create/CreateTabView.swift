@@ -15,6 +15,7 @@ struct CreateTabView: View {
     @Binding var activeTab: ContentView.TabIdentifier
 
     @Environment(\.modelContext) private var context
+    @Environment(\.dismiss) private var dismiss
     @State private var showEmptyWarning: Bool = false
 
     //----------------- Start of UI Code -----------------//
@@ -95,6 +96,7 @@ struct CreateTabView: View {
         try? context.save()
         reset()
         activeTab = .notes
+        dismiss()
     }
     
     func reset() {
@@ -105,23 +107,8 @@ struct CreateTabView: View {
 
     func cancel() {
         dismissKeyboard()
-        
-        if editingNote != nil {
-            // Navigate back when editing an existing note
-            activeTab = .notes
-            reset()
-        } else {
-            let hasContent = !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
-                             !desc.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            
-            if hasContent {
-                // If content is typed for a new note, "Cancel" acts as a "Clear" action
-                reset()
-            } else {
-                // If it is already empty, navigate back
-                activeTab = .notes
-            }
-        }
+        reset()
+        dismiss()
     }
 
     func dismissKeyboard() {

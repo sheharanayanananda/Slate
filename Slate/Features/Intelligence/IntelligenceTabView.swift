@@ -9,6 +9,7 @@ import SwiftUI
 
 struct IntelligenceTabView: View {
     @Binding var editingNote: SlateModel?
+    @Binding var showCreateSheet: Bool
     @Binding var activeTab: ContentView.TabIdentifier
     @State private var activeFeature: FeatureType?
     
@@ -48,7 +49,7 @@ struct IntelligenceTabView: View {
                     )
                 }
                 .sheet(item: $activeFeature) { type in
-                    FeatureSheet(type: type, editingNote: $editingNote, activeTab: $activeTab)
+                    FeatureSheet(type: type, editingNote: $editingNote, showCreateSheet: $showCreateSheet, activeTab: $activeTab)
                 }
                 .padding()
             }
@@ -61,6 +62,7 @@ struct IntelligenceTabView: View {
 #Preview {
     IntelligenceTabView(
         editingNote: .constant(nil),
+        showCreateSheet: .constant(false),
         activeTab: .constant(.intelligence)
     )
 }
