@@ -8,42 +8,54 @@ import SwiftUI
 struct FeatureCard: View {
     var title: String
     var iconName: String
-    var color: Color
+    var iconColor: Color
     var action: () -> Void
     
     var body: some View {
         Button(action: action) {
-            VStack(alignment: .leading) {
+            VStack(alignment: .leading, spacing: 20) {
                 HStack(alignment: .top) {
+                    // Minimalist icon with vibrant color
                     Image(systemName: iconName)
-                        .font(.system(size: 30, weight: .medium))
-                        .foregroundColor(.white)
+                        .font(.system(size: 22, weight: .medium))
+                        .foregroundColor(iconColor)
                     
                     Spacer()
                     
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundColor(.white)
-                        .padding(8)
-                        .background(Color.white.opacity(0.25))
-                        .clipShape(Circle())
+                    // Sleek, clean action arrow
+                    Image(systemName: "arrow.up.forward")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundColor(.white.opacity(0.6))
                 }
                 
                 Spacer()
                 
+                // Crisp title text
                 Text(title)
-                    .font(.subheadline)
-                    .fontWeight(.semibold)
+                    .font(.system(size: 15, weight: .semibold))
                     .foregroundColor(.white)
-                    .multilineTextAlignment(.leading)
-                    .lineLimit(2)
             }
-            .padding(16)
-            .frame(maxWidth: .infinity, minHeight: 130)
-            .background(color)
-            .clipShape(RoundedRectangle(cornerRadius: 30, style: .continuous))
+            .padding(20)
+            .frame(maxWidth: .infinity, minHeight: 120)
+            .background(Color(red: 30/255, green: 30/255, blue: 30/255))
+            .clipShape(RoundedRectangle(cornerRadius: 25, style: .continuous))
+            .shadow(color: Color.black.opacity(0.12), radius: 8, x: 0, y: 4)
+            .overlay(
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .stroke(Color.white.opacity(0.06), lineWidth: 1)
+            )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(PremiumCardButtonStyle())
+    }
+}
+
+// Custom button style for tactile spring feedback
+struct PremiumCardButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.96 : 1.0)
+            .brightness(configuration.isPressed ? -0.04 : 0)
+            .animation(.spring(response: 0.25, dampingFraction: 0.8, blendDuration: 0), value: configuration.isPressed)
     }
 }
 

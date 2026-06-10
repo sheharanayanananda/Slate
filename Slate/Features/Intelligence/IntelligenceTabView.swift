@@ -13,55 +13,55 @@ struct IntelligenceTabView: View {
     @Binding var activeTab: ContentView.TabIdentifier
     @State private var activeFeature: FeatureType?
     
+    // Vibrant icon colors
+    private let smartLenseIconColor = Color.blue
+    private let transcriptIconColor = Color.pink
+    private let summarizeIconColor = Color.orange
+    
     //----------------- Start of UI Code -----------------//
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                let columns = [
-                    GridItem(.flexible(), spacing: 16),
-                    GridItem(.flexible(), spacing: 16)
-                ]
-                
-                LazyVGrid(columns: columns, spacing: 16) {
-                    FeatureCard(
-                        title: "Smart Lense",
-                        iconName: "sparkles",
-                        color: Color(.blue),
-                        action: {
-                            activeFeature = .smartLense
-                        }
-                    )
-                    FeatureCard(
-                        title: "Transcript",
-                        iconName: "waveform",
-                        color: Color(.pink),
-                        action: {
-                            activeFeature = .transcript
-                        }
-                    )
-                    FeatureCard(
-                        title: "Summarize",
-                        iconName: "list.bullet.below.rectangle",
-                        color: Color(.orange),
-                        action: {
-                            activeFeature = .summarize
-                        }
-                    )
-                }
-                .sheet(item: $activeFeature) { type in
-                    FeatureSheet(type: type, editingNote: $editingNote, showCreateSheet: $showCreateSheet, activeTab: $activeTab)
-                }
-                .padding()
+        ScrollView {
+            let columns = [
+                GridItem(.flexible(), spacing: 16),
+                GridItem(.flexible(), spacing: 16)
+            ]
+            
+            LazyVGrid(columns: columns, spacing: 16) {
+                FeatureCard(
+                    title: "Smart Lense",
+                    iconName: "sparkles",
+                    iconColor: smartLenseIconColor,
+                    action: {
+                        activeFeature = .smartLense
+                    }
+                )
+                FeatureCard(
+                    title: "Transcript",
+                    iconName: "waveform",
+                    iconColor: transcriptIconColor,
+                    action: {
+                        activeFeature = .transcript
+                    }
+                )
+                FeatureCard(
+                    title: "Summarize",
+                    iconName: "list.bullet.below.rectangle",
+                    iconColor: summarizeIconColor,
+                    action: {
+                        activeFeature = .summarize
+                    }
+                )
             }
+            .padding()
+        }
+        .navigationTitle("Tools")
+        .sheet(item: $activeFeature) { type in
+            FeatureSheet(type: type, editingNote: $editingNote, showCreateSheet: $showCreateSheet, activeTab: $activeTab)
         }
     }
     //----------------- End of UI Code -----------------//
 }
 
 #Preview {
-    IntelligenceTabView(
-        editingNote: .constant(nil),
-        showCreateSheet: .constant(false),
-        activeTab: .constant(.intelligence)
-    )
+    ContentView()
 }
