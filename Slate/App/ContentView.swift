@@ -51,6 +51,12 @@ struct ContentView: View {
             }
             .presentationDetents([.medium, .large])
         }
+        .sheet(isPresented: $showCreateSheet) {
+            NavigationStack {
+                CreateTabView(editingNote: $editingNote, activeTab: $activeTab)
+            }
+            .presentationDetents([.medium, .large])
+        }
     }
     //----------------- End of UI Code -----------------//
 }
