@@ -83,8 +83,8 @@ Slate/
 
 1. **Clone the Repository**:
    ```bash
-   git clone https://github.com/sheharanayanananda/Notes-iOS-App.git
-   cd Notes-iOS-App
+   git clone https://github.com/sheharanayanananda/Slate.git
+   cd Slate
    ```
 
 2. **Open the Project**:
