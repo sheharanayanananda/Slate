@@ -16,6 +16,8 @@ struct SmartLenseSheet: View {
     @State private var presentationDetent: PresentationDetent = .medium
     @State private var isProcessing: Bool = false
     @State private var processStatus: String = "Analyzing Image"
+    @State private var errorMessage: String? = nil
+    @State private var showErrorAlert: Bool = false
     
     var body: some View {
         NavigationStack {
@@ -79,6 +81,11 @@ struct SmartLenseSheet: View {
             }
             .navigationBarTitleDisplayMode(.inline)
             .presentationDetents([.medium, .large], selection: $presentationDetent)
+            .alert("AI Feature Error", isPresented: $showErrorAlert) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text(errorMessage ?? "An unknown error occurred.")
+            }
             .overlay {
                 if isProcessing {
                     ZStack {
@@ -217,12 +224,14 @@ struct SmartLenseSheet: View {
             } catch {
                 await MainActor.run {
                     processStatus = "Failed to analyze"
+                    errorMessage = error.localizedDescription
+                    showErrorAlert = true
                 }
                 try await Task.sleep(nanoseconds: 2_000_000_000)
                 await MainActor.run {
                     isProcessing = false
                 }
-                print("Failed to generate AI note: \\(error)")
+                print("Failed to generate AI note: \(error)")
             }
         }
     }
