@@ -70,27 +70,23 @@ struct ContentView: View {
                 .sheet(item: $quickFeature) { type in
                     FeatureSheet(type: type, editingNote: $editingNote, activeTab: $activeTab)
                 }
-                .simultaneousGesture(
-                    DragGesture(minimumDistance: 10)
-                        .onChanged { value in
-                            if !showSettings && activeTab == .notes {
-                                if settingsDragOffset > 0 {
-                                    settingsDragOffset = value.translation.width
-                                } else if value.translation.width > 10 && abs(value.translation.width) > abs(value.translation.height) {
-                                    settingsDragOffset = value.translation.width
+                .onSwipeRightToOpen(
+                    isEnabled: !showSettings && activeTab == .notes,
+                    onDragChanged: { translation in
+                        if translation > 0 {
+                            settingsDragOffset = translation
+                        }
+                    },
+                    onDragEnded: { translation, velocity in
+                        if settingsDragOffset > 0 {
+                            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                                if translation > screenWidth / 3 || velocity > 500 {
+                                    showSettings = true
                                 }
+                                settingsDragOffset = 0
                             }
                         }
-                        .onEnded { value in
-                            if !showSettings && activeTab == .notes && settingsDragOffset > 0 {
-                                withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                                    if value.translation.width > screenWidth / 3 {
-                                        showSettings = true
-                                    }
-                                    settingsDragOffset = 0
-                                }
-                            }
-                        }
+                    }
                 )
                 
                 if showSettings || settingsDragOffset > 0 {
@@ -100,6 +96,7 @@ struct ContentView: View {
                                 showSettings = false
                             }
                         })
+                        .disabled(settingsDragOffset != 0)
                     }
                     .offset(x: settingsXOffset(screenWidth: screenWidth))
                     .zIndex(1)
@@ -112,7 +109,8 @@ struct ContentView: View {
                             }
                             .onEnded { value in
                                 withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                                    if value.translation.width < -screenWidth / 3 {
+                                    let predictedEnd = value.predictedEndTranslation.width
+                                    if value.translation.width < -screenWidth / 3 || predictedEnd < -screenWidth / 2 {
                                         showSettings = false
                                     }
                                     settingsDragOffset = 0
