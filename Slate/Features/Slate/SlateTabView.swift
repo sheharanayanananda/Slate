@@ -67,8 +67,6 @@ struct SlateTabView: View {
                         Button("Delete", systemImage: "trash", role: .destructive) {
                             context.delete(note)
                         }
-                    }
-                    .swipeActions(edge: .leading, allowsFullSwipe: true) {
                         Button("Share", systemImage: "square.and.arrow.up") {
                             noteToShare = note
                             showShareOptions = true

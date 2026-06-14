@@ -18,57 +18,114 @@ struct ContentView: View {
     @State private var editingNote: SlateModel? = nil
     @State private var quickFeature: FeatureType? = nil
     @State private var showSettings = false
+    @State private var settingsDragOffset: CGFloat = 0
 
     @Environment(\.modelContext) private var context
 
+    private func settingsXOffset(screenWidth: CGFloat) -> CGFloat {
+        if showSettings {
+            return min(0, settingsDragOffset)
+        } else {
+            return min(0, -screenWidth + settingsDragOffset)
+        }
+    }
+
     //----------------- Start of UI Code -----------------//
     var body: some View {
-        ZStack {
-            TabView(selection: $activeTab) {
-                Tab("Slate", systemImage: "scribble.variable", value: .notes) {
-                    NavigationStack {
-                        SlateTabView(
-                            showSettings: $showSettings,
-                            onCreate: {
-                                editingNote = nil
-                                activeTab = .create
-                            },
-                            onSelect: { note in
-                                editingNote = note
-                                activeTab = .create
-                            },
-                            onSmartLense: { quickFeature = .smartLense },
-                            onTranscript: { quickFeature = .transcript }
-                        )
-                    }
-                }
-                
-                Tab(editingNote == nil ? "New Note" : "Edit Note", systemImage: "plus", value: .create) {
-                    NavigationStack {
-                        CreateTabView(editingNote: $editingNote, activeTab: $activeTab)
-                    }
-                }
-                
-                Tab("Tools", systemImage: "sparkles", value: .intelligence) {
-                    NavigationStack {
-                        IntelligenceTabView(editingNote: $editingNote, activeTab: $activeTab)
-                    }
-                }
-            }
-            .sheet(item: $quickFeature) { type in
-                FeatureSheet(type: type, editingNote: $editingNote, activeTab: $activeTab)
-            }
-            
-            if showSettings {
-                NavigationStack {
-                    SettingsTabView(onDismiss: {
-                        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                            showSettings = false
+        GeometryReader { geometry in
+            let screenWidth = geometry.size.width
+            ZStack {
+                TabView(selection: $activeTab) {
+                    Tab("Slate", systemImage: "scribble.variable", value: .notes) {
+                        NavigationStack {
+                            SlateTabView(
+                                showSettings: $showSettings,
+                                onCreate: {
+                                    editingNote = nil
+                                    activeTab = .create
+                                },
+                                onSelect: { note in
+                                    editingNote = note
+                                    activeTab = .create
+                                },
+                                onSmartLense: { quickFeature = .smartLense },
+                                onTranscript: { quickFeature = .transcript }
+                            )
                         }
-                    })
+                    }
+                    
+                    Tab(editingNote == nil ? "New Note" : "Edit Note", systemImage: "plus", value: .create) {
+                        NavigationStack {
+                            CreateTabView(editingNote: $editingNote, activeTab: $activeTab)
+                        }
+                    }
+                    
+                    Tab("Tools", systemImage: "sparkles", value: .intelligence) {
+                        NavigationStack {
+                            IntelligenceTabView(editingNote: $editingNote, activeTab: $activeTab)
+                        }
+                    }
                 }
-                .transition(.move(edge: .leading))
-                .zIndex(1)
+                .sheet(item: $quickFeature) { type in
+                    FeatureSheet(type: type, editingNote: $editingNote, activeTab: $activeTab)
+                }
+                .simultaneousGesture(
+                    DragGesture(minimumDistance: 10)
+                        .onChanged { value in
+                            if !showSettings && activeTab == .notes {
+                                if settingsDragOffset > 0 {
+                                    settingsDragOffset = value.translation.width
+                                } else if value.translation.width > 10 && abs(value.translation.width) > abs(value.translation.height) {
+                                    settingsDragOffset = value.translation.width
+                                }
+                            }
+                        }
+                        .onEnded { value in
+                            if !showSettings && activeTab == .notes && settingsDragOffset > 0 {
+                                withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                                    if value.translation.width > screenWidth / 3 {
+                                        showSettings = true
+                                    }
+                                    settingsDragOffset = 0
+                                }
+                            }
+                        }
+                )
+                
+                if showSettings || settingsDragOffset > 0 {
+                    NavigationStack {
+                        SettingsTabView(onDismiss: {
+                            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                                showSettings = false
+                            }
+                        })
+                    }
+                    .offset(x: settingsXOffset(screenWidth: screenWidth))
+                    .zIndex(1)
+                    .simultaneousGesture(
+                        DragGesture(minimumDistance: 10)
+                            .onChanged { value in
+                                if value.translation.width < 0 {
+                                    settingsDragOffset = value.translation.width
+                                }
+                            }
+                            .onEnded { value in
+                                withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                                    if value.translation.width < -screenWidth / 3 {
+                                        showSettings = false
+                                    }
+                                    settingsDragOffset = 0
+                                }
+                            }
+                    )
+                }
+            }
+            .onChange(of: showSettings) { oldValue, newValue in
+                if newValue {
+                    let generator = UIImpactFeedbackGenerator(style: .medium)
+                    generator.prepare()
+                    generator.impactOccurred()
+                }
             }
         }
     }

@@ -125,20 +125,11 @@ struct SettingsTabView: View {
         }
         .navigationTitle("Settings")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
-                Button(action: {
-                    dismissView()
-                }) {
-                    HStack(spacing: 4) {
-                        Image(systemName: "chevron.left")
-                        Text("Slate")
-                    }
-                }
-            }
-        }
         .onAppear {
             loadSettings()
+        }
+        .onDisappear {
+            savePendingChanges()
         }
         .task(id: apiKey) {
             // Fast in-memory check against loaded key to avoid synchronous Keychain daemon querying on every keystroke
