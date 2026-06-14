@@ -7,7 +7,6 @@ import SwiftUI
 
 struct SmartLenseSheet: View {
     @Binding var editingNote: SlateModel?
-    @Binding var showCreateSheet: Bool
     @Binding var activeTab: ContentView.TabIdentifier
     @Environment(\.dismiss) private var dismiss
     
@@ -218,7 +217,7 @@ struct SmartLenseSheet: View {
                 await MainActor.run {
                     isProcessing = false
                     editingNote = SlateModel(title: parsed.title, desc: parsed.desc)
-                    showCreateSheet = true
+                    activeTab = .create
                     dismiss()
                 }
             } catch {

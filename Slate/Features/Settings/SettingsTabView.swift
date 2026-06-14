@@ -50,6 +50,7 @@ struct SettingsTabView: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var apiKey: String = ""
+    @State private var savedApiKey: String = ""
     @State private var selectedModel: String = "gemma4:31b"
     @State private var showKey: Bool = false
     @State private var validationStatus: KeyValidationStatus = .empty
@@ -60,7 +61,7 @@ struct SettingsTabView: View {
     var body: some View {
         Form {
             Section(
-                footer: Text("Your API key is encrypted and stored securely in your device's Keychain. It is used to authorize intelligence features (such as Smart Lense) on the cloud server.")
+                footer: Text("Your API key is encrypted and stored securely in your device's Keychain. It is used to authorize intelligence features on the cloud server.")
             ) {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
@@ -139,9 +140,15 @@ struct SettingsTabView: View {
             loadSettings()
         }
         .task(id: apiKey) {
-            // Debounce validation check by 0.6 seconds
+            // Fast in-memory check against loaded key to avoid synchronous Keychain daemon querying on every keystroke
+            guard apiKey != savedApiKey else {
+                validationStatus = apiKey.isEmpty ? .empty : .valid
+                return
+            }
+            
+            // Debounce validation check by 1.0 second to allow smoother typing
             do {
-                try await Task.sleep(nanoseconds: 600_000_000)
+                try await Task.sleep(nanoseconds: 1_000_000_000)
                 await performValidation()
             } catch {
                 // Task cancelled on key change
@@ -151,9 +158,26 @@ struct SettingsTabView: View {
     //----------------- End of UI Code -----------------//
 
     private func loadSettings() {
-        apiKey = KeychainHelper.shared.readApiKey() ?? ""
         selectedModel = UserDefaults.standard.string(forKey: "ollama_model_name") ?? "gemma4:31b"
-        models = [selectedModel]
+        
+        // Instant load of models from local cache to prevent empty picker rendering lag
+        if let cached = UserDefaults.standard.stringArray(forKey: "ollama_available_models") {
+            models = cached
+        } else {
+            models = [selectedModel]
+        }
+        
+        // Read key from Keychain asynchronously to avoid blocking popover entry transitions
+        Task(priority: .userInitiated) {
+            let key = KeychainHelper.shared.readApiKey() ?? ""
+            await MainActor.run {
+                self.apiKey = key
+                self.savedApiKey = key
+                if !key.isEmpty {
+                    self.validationStatus = .valid
+                }
+            }
+        }
         
         Task {
             await fetchModels()
@@ -162,12 +186,17 @@ struct SettingsTabView: View {
 
     private func saveSettings() {
         let trimmedKey = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
-        if trimmedKey.isEmpty {
-            KeychainHelper.shared.deleteApiKey()
-        } else {
-            KeychainHelper.shared.saveApiKey(trimmedKey)
+        let model = selectedModel
+        
+        // Write to Keychain on a background thread to prevent UI thread stuttering
+        Task(priority: .userInitiated) {
+            if trimmedKey.isEmpty {
+                KeychainHelper.shared.deleteApiKey()
+            } else {
+                KeychainHelper.shared.saveApiKey(trimmedKey)
+            }
         }
-        UserDefaults.standard.set(selectedModel, forKey: "ollama_model_name")
+        UserDefaults.standard.set(model, forKey: "ollama_model_name")
         dismiss()
     }
 
@@ -218,13 +247,24 @@ struct SettingsTabView: View {
             let fetchedNames = tagsRes.models.map { $0.name }
             
             await MainActor.run {
+                // Filter models to keep only standard, popular prefixes (Gemma, Llama, Phi, Mistral, Qwen)
+                // This keeps the SwiftUI Menu Picker lightweight, eliminating list-rendering performance lags.
+                let allowedPrefixes = ["gemma", "llama", "phi", "mistral", "qwen"]
+                let filteredNames = fetchedNames.filter { name in
+                    allowedPrefixes.contains { prefix in
+                        name.localizedCaseInsensitiveContains(prefix)
+                    }
+                }
+                
                 var uniqueModels = [selectedModel]
-                for name in fetchedNames {
+                for name in filteredNames {
                     if !uniqueModels.contains(name) {
                         uniqueModels.append(name)
                     }
                 }
                 self.models = uniqueModels
+                // Cache the list of models in UserDefaults
+                UserDefaults.standard.set(uniqueModels, forKey: "ollama_available_models")
             }
         } catch {
             print("Failed to fetch models: \(error)")

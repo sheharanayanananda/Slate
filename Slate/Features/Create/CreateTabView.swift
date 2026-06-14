@@ -15,7 +15,6 @@ struct CreateTabView: View {
     @Binding var activeTab: ContentView.TabIdentifier
 
     @Environment(\.modelContext) private var context
-    @Environment(\.dismiss) private var dismiss
     @State private var showEmptyWarning: Bool = false
 
     //----------------- Start of UI Code -----------------//
@@ -96,7 +95,6 @@ struct CreateTabView: View {
         try? context.save()
         reset()
         activeTab = .notes
-        dismiss()
     }
     
     func reset() {
@@ -108,7 +106,7 @@ struct CreateTabView: View {
     func cancel() {
         dismissKeyboard()
         reset()
-        dismiss()
+        activeTab = .notes
     }
 
     func dismissKeyboard() {

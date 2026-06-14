@@ -11,12 +11,12 @@ import SwiftData
 struct ContentView: View {
 
     enum TabIdentifier: Hashable {
-        case notes, intelligence, settings
+        case notes, create, intelligence, settings
     }
 
     @State private var activeTab: TabIdentifier = .notes
     @State private var editingNote: SlateModel? = nil
-    @State private var showCreateSheet = false
+    @State private var quickFeature: FeatureType? = nil
 
     @Environment(\.modelContext) private var context
 
@@ -28,34 +28,32 @@ struct ContentView: View {
                     SlateTabView(
                         onCreate: {
                             editingNote = nil
-                            showCreateSheet = true
+                            activeTab = .create
                         },
                         onSelect: { note in
                             editingNote = note
-                            showCreateSheet = true
-                        }
+                            activeTab = .create
+                        },
+                        onSmartLense: { quickFeature = .smartLense },
+                        onTranscript: { quickFeature = .transcript }
                     )
+                }
+            }
+            
+            Tab(editingNote == nil ? "New Note" : "Edit Note", systemImage: "plus", value: .create) {
+                NavigationStack {
+                    CreateTabView(editingNote: $editingNote, activeTab: $activeTab)
                 }
             }
             
             Tab("Tools", systemImage: "sparkles", value: .intelligence) {
                 NavigationStack {
-                    IntelligenceTabView(editingNote: $editingNote, showCreateSheet: $showCreateSheet, activeTab: $activeTab)
+                    IntelligenceTabView(editingNote: $editingNote, activeTab: $activeTab)
                 }
             }
         }
-        
-        .sheet(isPresented: $showCreateSheet) {
-            NavigationStack {
-                CreateTabView(editingNote: $editingNote, activeTab: $activeTab)
-            }
-            .presentationDetents([.medium, .large])
-        }
-        .sheet(isPresented: $showCreateSheet) {
-            NavigationStack {
-                CreateTabView(editingNote: $editingNote, activeTab: $activeTab)
-            }
-            .presentationDetents([.medium, .large])
+        .sheet(item: $quickFeature) { type in
+            FeatureSheet(type: type, editingNote: $editingNote, activeTab: $activeTab)
         }
     }
     //----------------- End of UI Code -----------------//

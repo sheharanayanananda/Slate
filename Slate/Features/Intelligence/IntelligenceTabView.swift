@@ -9,7 +9,6 @@ import SwiftUI
 
 struct IntelligenceTabView: View {
     @Binding var editingNote: SlateModel?
-    @Binding var showCreateSheet: Bool
     @Binding var activeTab: ContentView.TabIdentifier
     @State private var activeFeature: FeatureType?
     
@@ -56,7 +55,7 @@ struct IntelligenceTabView: View {
         }
         .navigationTitle("Tools")
         .sheet(item: $activeFeature) { type in
-            FeatureSheet(type: type, editingNote: $editingNote, showCreateSheet: $showCreateSheet, activeTab: $activeTab)
+            FeatureSheet(type: type, editingNote: $editingNote, activeTab: $activeTab)
         }
     }
     //----------------- End of UI Code -----------------//

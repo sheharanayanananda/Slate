@@ -16,7 +16,6 @@ enum FeatureType: Identifiable {
 struct FeatureSheet: View {
     let type: FeatureType
     @Binding var editingNote: SlateModel?
-    @Binding var showCreateSheet: Bool
     @Binding var activeTab: ContentView.TabIdentifier
     @Environment(\.dismiss) private var dismiss
 
@@ -24,7 +23,7 @@ struct FeatureSheet: View {
         Group {
             switch type {
             case .smartLense:
-                SmartLenseSheet(editingNote: $editingNote, showCreateSheet: $showCreateSheet, activeTab: $activeTab)
+                SmartLenseSheet(editingNote: $editingNote, activeTab: $activeTab)
             case .transcript:
                 TranscriptSheet()
             case .summarize:

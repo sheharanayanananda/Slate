@@ -20,10 +20,19 @@ struct SlateTabView: View {
 
     let onCreate: () -> Void
     let onSelect: (SlateModel) -> Void
+    let onSmartLense: () -> Void
+    let onTranscript: () -> Void
 
-    init(onCreate: @escaping () -> Void = {}, onSelect: @escaping (SlateModel) -> Void = { _ in }) {
+    init(
+        onCreate: @escaping () -> Void = {},
+        onSelect: @escaping (SlateModel) -> Void = { _ in },
+        onSmartLense: @escaping () -> Void = {},
+        onTranscript: @escaping () -> Void = {}
+    ) {
         self.onCreate = onCreate
         self.onSelect = onSelect
+        self.onSmartLense = onSmartLense
+        self.onTranscript = onTranscript
     }
 
     //----------------- Start of UI Code -----------------//
@@ -102,8 +111,13 @@ struct SlateTabView: View {
         .toolbarTitleDisplayMode(.automatic)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
-                Button("Create", systemImage: "plus") {
-                    onCreate()
+                HStack(spacing: 16) {
+                    Button("Transcript", systemImage: "mic") {
+                        onTranscript()
+                    }
+                    Button("Smart Lense", systemImage: "camera") {
+                        onSmartLense()
+                    }
                 }
             }
             ToolbarItem(placement: .navigation) {
