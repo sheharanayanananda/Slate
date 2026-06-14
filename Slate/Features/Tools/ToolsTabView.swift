@@ -8,6 +8,7 @@ import SwiftUI
 struct ToolsTabView: View {
     @Binding var editingNote: SlateModel?
     @Binding var activeTab: ContentView.TabIdentifier
+    let onSmartLens: () -> Void
     @State private var activeTool: ToolType?
     
     var body: some View {
@@ -25,7 +26,11 @@ struct ToolsTabView: View {
                         iconName: tool.iconName,
                         iconColor: tool.iconColor,
                         action: {
-                            activeTool = tool
+                            if tool == .smartLens {
+                                onSmartLens()
+                            } else {
+                                activeTool = tool
+                            }
                         }
                     )
                 }

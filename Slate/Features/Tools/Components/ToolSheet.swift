@@ -15,7 +15,7 @@ struct ToolSheet: View {
         Group {
             switch type {
             case .smartLens:
-                SmartLensSheet(editingNote: $editingNote, activeTab: $activeTab)
+                EmptyView()
             case .transcribe:
                 TranscribeToolSheet()
             }

@@ -158,8 +158,9 @@ struct CreateTabView: View {
                     prompt: noteContent,
                     system: systemPrompt
                 )
+                let rtfSummary = MarkdownToRTFConverter.convert(summary)
                 await MainActor.run {
-                    desc = summary
+                    desc = rtfSummary
                     isSummarizing = false
                 }
             } catch {
