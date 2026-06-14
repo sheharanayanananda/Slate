@@ -79,6 +79,15 @@ struct SettingsView: View {
         }
         .navigationTitle("Settings")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button(action: {
+                    dismissView()
+                }) {
+                    Image(systemName: "chevron.right")
+                }
+            }
+        }
         .onDisappear {
             viewModel.savePendingChanges()
         }

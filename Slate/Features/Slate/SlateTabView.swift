@@ -18,6 +18,7 @@ struct SlateTabView: View {
     @Binding var showSettings: Bool
     @State private var shareItems: [Any] = []
 
+    let onOpenSettings: () -> Void
     let onCreate: () -> Void
     let onSelect: (SlateModel) -> Void
     let onSmartLense: () -> Void
@@ -25,12 +26,14 @@ struct SlateTabView: View {
 
     init(
         showSettings: Binding<Bool>,
+        onOpenSettings: @escaping () -> Void = {},
         onCreate: @escaping () -> Void = {},
         onSelect: @escaping (SlateModel) -> Void = { _ in },
         onSmartLense: @escaping () -> Void = {},
         onTranscript: @escaping () -> Void = {}
     ) {
         self._showSettings = showSettings
+        self.onOpenSettings = onOpenSettings
         self.onCreate = onCreate
         self.onSelect = onSelect
         self.onSmartLense = onSmartLense
@@ -67,6 +70,8 @@ struct SlateTabView: View {
                         Button("Delete", systemImage: "trash", role: .destructive) {
                             context.delete(note)
                         }
+                    }
+                    .swipeActions(edge: .leading, allowsFullSwipe: true) {
                         Button("Share", systemImage: "square.and.arrow.up") {
                             noteToShare = note
                             showShareOptions = true
@@ -124,9 +129,7 @@ struct SlateTabView: View {
             }
             ToolbarItem(placement: .navigation) {
                 Button(action: {
-                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                        showSettings = true
-                    }
+                    onOpenSettings()
                 }) {
                     Image(systemName: "gear")
                 }

@@ -18,17 +18,18 @@ struct ContentView: View {
     @State private var editingNote: SlateModel? = nil
     @State private var quickFeature: FeatureType? = nil
     @State private var showSettings = false
-    @State private var settingsDragOffset: CGFloat = 0
-    @State private var isTransitioningSettings = false
+
+    @State private var isSettingsVisible = false
+    @State private var isSettingsInteractable = false
     @State private var settingsViewModel = SettingsViewModel()
 
     @Environment(\.modelContext) private var context
 
     private func settingsXOffset(screenWidth: CGFloat) -> CGFloat {
         if showSettings {
-            return min(0, settingsDragOffset)
+            return 0
         } else {
-            return min(0, -screenWidth + settingsDragOffset)
+            return -screenWidth
         }
     }
 
@@ -42,6 +43,12 @@ struct ContentView: View {
                         NavigationStack {
                             SlateTabView(
                                 showSettings: $showSettings,
+                                onOpenSettings: {
+                                    isSettingsVisible = true
+                                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                                        showSettings = true
+                                    }
+                                },
                                 onCreate: {
                                     editingNote = nil
                                     activeTab = .create
@@ -71,55 +78,24 @@ struct ContentView: View {
                 .sheet(item: $quickFeature) { type in
                     FeatureSheet(type: type, editingNote: $editingNote, activeTab: $activeTab)
                 }
-                .onSwipeRightToOpen(
-                    isEnabled: !showSettings && activeTab == .notes,
-                    onDragChanged: { translation in
-                        if translation > 0 {
-                            settingsDragOffset = translation
-                        }
-                    },
-                    onDragEnded: { translation, velocity in
-                        if settingsDragOffset > 0 {
+
+                if isSettingsVisible {
+                    NavigationStack {
+                        SettingsView(viewModel: settingsViewModel, onDismiss: {
                             withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                                if translation > screenWidth / 3 || velocity > 500 {
-                                    showSettings = true
-                                }
-                                settingsDragOffset = 0
-                            }
-                        }
-                    }
-                )
-                
-                NavigationStack {
-                    SettingsView(viewModel: settingsViewModel, onDismiss: {
-                        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                            showSettings = false
-                        }
-                    })
-                    .disabled(!showSettings || settingsDragOffset != 0 || isTransitioningSettings)
-                }
-                .offset(x: settingsXOffset(screenWidth: screenWidth))
-                .zIndex(1)
-                .onSwipeLeftToClose(
-                    isEnabled: showSettings,
-                    onDragChanged: { translation in
-                        if translation < 0 {
-                            settingsDragOffset = translation
-                        }
-                    },
-                    onDragEnded: { translation, velocity in
-                        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                            if translation < -screenWidth / 3 || velocity < -500 {
                                 showSettings = false
                             }
-                            settingsDragOffset = 0
-                        }
+                        })
+                        .disabled(!isSettingsInteractable)
                     }
-                )
+                    .offset(x: settingsXOffset(screenWidth: screenWidth))
+                    .zIndex(1)
+                }
             }
             .onChange(of: showSettings) { oldValue, newValue in
-                isTransitioningSettings = true
+                isSettingsInteractable = false
                 if newValue {
+                    isSettingsVisible = true
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
                         if showSettings {
                             let generator = UIImpactFeedbackGenerator(style: .medium)
@@ -127,12 +103,16 @@ struct ContentView: View {
                             generator.impactOccurred()
                         }
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-                            isTransitioningSettings = false
+                            if showSettings {
+                                isSettingsInteractable = true
+                            }
                         }
                     }
                 } else {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
-                        isTransitioningSettings = false
+                        if !showSettings {
+                            isSettingsVisible = false
+                        }
                     }
                 }
             }
