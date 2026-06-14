@@ -19,6 +19,7 @@ struct ContentView: View {
     @State private var quickFeature: FeatureType? = nil
     @State private var showSettings = false
     @State private var settingsDragOffset: CGFloat = 0
+    @State private var settingsViewModel = SettingsViewModel()
 
     @Environment(\.modelContext) private var context
 
@@ -94,7 +95,7 @@ struct ContentView: View {
                 
                 if showSettings || settingsDragOffset > 0 {
                     NavigationStack {
-                        SettingsTabView(onDismiss: {
+                        SettingsView(viewModel: settingsViewModel, onDismiss: {
                             withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
                                 showSettings = false
                             }
