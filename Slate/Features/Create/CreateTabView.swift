@@ -20,6 +20,15 @@ struct CreateTabView: View {
     @State private var errorMessage: String? = nil
     @State private var showErrorAlert: Bool = false
 
+    private var isDescriptionEmpty: Bool {
+        var plainText = desc
+        if desc.hasPrefix("rtf:"), let data = Data(base64Encoded: String(desc.dropFirst(4))),
+           let attr = try? NSAttributedString(data: data, options: [.documentType: NSAttributedString.DocumentType.rtf], documentAttributes: nil) {
+            plainText = attr.string
+        }
+        return plainText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
     //----------------- Start of UI Code -----------------//
     var body: some View {
         VStack(spacing: 20) {
@@ -61,24 +70,24 @@ struct CreateTabView: View {
                     cancel()
                 }
             }
+            
+            ToolbarItem(placement: .topBarTrailing) {
+                if isSummarizing {
+                    ProgressView()
+                        .controlSize(.small)
+                } else {
+                    Button(action: summarizeNote) {
+                        Image(systemName: "text.line.3.summary")
+                    }
+                    .disabled(isDescriptionEmpty)
+                }
+            }
                         
             ToolbarItem(placement: .confirmationAction) {
-                HStack(spacing: 16) {
-                    if isSummarizing {
-                        ProgressView()
-                            .controlSize(.small)
-                    } else {
-                        Button(action: summarizeNote) {
-                            Image(systemName: "text.line.3.summary")
-                        }
-                        .disabled(desc.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                    }
-                    
-                    Button("Save", systemImage: "checkmark", role: .confirm) {
-                        saveNote()
-                    }
-                    .keyboardShortcut(.defaultAction)
+                Button("Save", systemImage: "checkmark", role: .confirm) {
+                    saveNote()
                 }
+                .keyboardShortcut(.defaultAction)
             }
         }
         .alert("Missing Fields", isPresented: $showEmptyWarning) {
@@ -118,21 +127,39 @@ struct CreateTabView: View {
     }
     
     func summarizeNote() {
-        let trimmedDesc = desc.trimmingCharacters(in: .whitespacesAndNewlines)
+        var plainText = desc
+        if desc.hasPrefix("rtf:"), let data = Data(base64Encoded: String(desc.dropFirst(4))),
+           let attr = try? NSAttributedString(data: data, options: [.documentType: NSAttributedString.DocumentType.rtf], documentAttributes: nil) {
+            plainText = attr.string
+        }
+        
+        let trimmedDesc = plainText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedDesc.isEmpty else { return }
         
         isSummarizing = true
         errorMessage = nil
         
+        let noteContent = "Title: \(title)\n\nContent:\n\(trimmedDesc)"
+        
         Task {
             do {
                 let client = OllamaClient()
+                let systemPrompt = """
+                You are a precise writing assistant acting directly as the author of this note.
+                Your goal is to rewrite the note into a much more summarized, clearly structured, and well-organized version of itself.
+
+                Guidelines:
+                1. Role: Write from the same perspective (e.g., using "I" or "we" if present in the original text) and maintain the author's original intent, style, and tone.
+                2. Structure: Use clear formatting (such as bullet points, logical headings, or short paragraphs) to make the content highly readable and organized.
+                3. Content: Retain all key information, dates, tasks, or critical details while removing fluff, redundancies, and filler words.
+                4. Output format: Return ONLY the final revised note content. Do not include any conversational introductions, explanations, wrapping commentary, or concluding sentences (e.g., do NOT say "Here is the summary:").
+                """
                 let summary = try await client.generate(
-                    prompt: trimmedDesc,
-                    system: "Please summarize the following text in a concise, bulleted manner."
+                    prompt: noteContent,
+                    system: systemPrompt
                 )
                 await MainActor.run {
-                    desc = desc + "\n\n**Summary:**\n" + summary
+                    desc = summary
                     isSummarizing = false
                 }
             } catch {

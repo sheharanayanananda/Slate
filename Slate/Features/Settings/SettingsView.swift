@@ -84,7 +84,7 @@ struct SettingsView: View {
                 Button(action: {
                     dismissView()
                 }) {
-                    Image(systemName: "chevron.right")
+                    Image(systemName: "chevron.left")
                 }
             }
         }

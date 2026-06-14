@@ -22,6 +22,7 @@ struct ContentView: View {
     @State private var isSettingsVisible = false
     @State private var isSettingsInteractable = false
     @State private var settingsViewModel = SettingsViewModel()
+    @State private var settingsTransitionTask: Task<Void, Never>? = nil
 
     @Environment(\.modelContext) private var context
 
@@ -81,11 +82,14 @@ struct ContentView: View {
 
                 if isSettingsVisible {
                     NavigationStack {
-                        SettingsView(viewModel: settingsViewModel, onDismiss: {
-                            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                                showSettings = false
+                        SettingsView(
+                            viewModel: settingsViewModel,
+                            onDismiss: {
+                                withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                                    showSettings = false
+                                }
                             }
-                        })
+                        )
                         .disabled(!isSettingsInteractable)
                     }
                     .offset(x: settingsXOffset(screenWidth: screenWidth))
@@ -93,26 +97,32 @@ struct ContentView: View {
                 }
             }
             .onChange(of: showSettings) { oldValue, newValue in
+                settingsTransitionTask?.cancel()
                 isSettingsInteractable = false
-                if newValue {
-                    isSettingsVisible = true
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                        if showSettings {
-                            let generator = UIImpactFeedbackGenerator(style: .medium)
-                            generator.prepare()
-                            generator.impactOccurred()
-                        }
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-                            if showSettings {
-                                isSettingsInteractable = true
-                            }
-                        }
-                    }
-                } else {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
-                        if !showSettings {
-                            isSettingsVisible = false
-                        }
+                
+                settingsTransitionTask = Task { @MainActor in
+                    if newValue {
+                        isSettingsVisible = true
+                        
+                        // Wait for 0.2s for haptic
+                        try? await Task.sleep(nanoseconds: 200_000_000)
+                        guard !Task.isCancelled else { return }
+                        
+                        let generator = UIImpactFeedbackGenerator(style: .medium)
+                        generator.prepare()
+                        generator.impactOccurred()
+                        
+                        // Wait another 0.15s to enable interactions (total 0.35s)
+                        try? await Task.sleep(nanoseconds: 150_000_000)
+                        guard !Task.isCancelled else { return }
+                        
+                        isSettingsInteractable = true
+                    } else {
+                        // Wait 0.35s for slide-out animation to finish
+                        try? await Task.sleep(nanoseconds: 350_000_000)
+                        guard !Task.isCancelled else { return }
+                        
+                        isSettingsVisible = false
                     }
                 }
             }
