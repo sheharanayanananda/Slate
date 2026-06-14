@@ -48,6 +48,8 @@ enum KeyValidationStatus: Equatable {
 struct SettingsTabView: View {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.dismiss) private var dismiss
+    
+    var onDismiss: (() -> Void)? = nil
 
     @State private var apiKey: String = ""
     @State private var savedApiKey: String = ""
@@ -124,16 +126,15 @@ struct SettingsTabView: View {
         .navigationTitle("Settings")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .cancellationAction) {
-                Button("Cancel") {
-                    dismiss()
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button(action: {
+                    dismissView()
+                }) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "chevron.left")
+                        Text("Slate")
+                    }
                 }
-            }
-            ToolbarItem(placement: .confirmationAction) {
-                Button("Save") {
-                    saveSettings()
-                }
-                .fontWeight(.semibold)
             }
         }
         .onAppear {
@@ -146,12 +147,39 @@ struct SettingsTabView: View {
                 return
             }
             
-            // Debounce validation check by 1.0 second to allow smoother typing
+            // Debounce save and validation check by 800ms to allow smoother typing
             do {
-                try await Task.sleep(nanoseconds: 1_000_000_000)
+                try await Task.sleep(nanoseconds: 800_000_000)
+                
+                let trimmedKey = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
+                await Task(priority: .userInitiated) {
+                    if trimmedKey.isEmpty {
+                        KeychainHelper.shared.deleteApiKey()
+                    } else {
+                        KeychainHelper.shared.saveApiKey(trimmedKey)
+                    }
+                }.value
+                
+                await MainActor.run {
+                    savedApiKey = apiKey
+                }
+                
                 await performValidation()
             } catch {
                 // Task cancelled on key change
+            }
+        }
+        .task(id: selectedModel) {
+            let currentSavedModel = UserDefaults.standard.string(forKey: "ollama_model_name") ?? "gemma4:31b"
+            guard selectedModel != currentSavedModel else { return }
+            
+            // Save model immediately to UserDefaults
+            UserDefaults.standard.set(selectedModel, forKey: "ollama_model_name")
+            
+            // Re-validate if API key is not empty
+            let trimmed = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !trimmed.isEmpty {
+                await performValidation()
             }
         }
     }
@@ -184,20 +212,30 @@ struct SettingsTabView: View {
         }
     }
 
-    private func saveSettings() {
+    private func savePendingChanges() {
         let trimmedKey = apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
-        let model = selectedModel
-        
-        // Write to Keychain on a background thread to prevent UI thread stuttering
-        Task(priority: .userInitiated) {
+        if apiKey != savedApiKey {
             if trimmedKey.isEmpty {
                 KeychainHelper.shared.deleteApiKey()
             } else {
                 KeychainHelper.shared.saveApiKey(trimmedKey)
             }
+            savedApiKey = apiKey
         }
-        UserDefaults.standard.set(model, forKey: "ollama_model_name")
-        dismiss()
+        
+        let currentSavedModel = UserDefaults.standard.string(forKey: "ollama_model_name") ?? "gemma4:31b"
+        if selectedModel != currentSavedModel {
+            UserDefaults.standard.set(selectedModel, forKey: "ollama_model_name")
+        }
+    }
+    
+    private func dismissView() {
+        savePendingChanges()
+        if let onDismiss = onDismiss {
+            onDismiss()
+        } else {
+            dismiss()
+        }
     }
 
     private func performValidation() async {
