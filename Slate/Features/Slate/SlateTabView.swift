@@ -114,10 +114,10 @@ struct SlateTabView: View {
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 HStack(spacing: 16) {
-                    Button("Transcript", systemImage: "mic") {
+                    Button("Transcript", systemImage: "waveform") {
                         onTranscript()
                     }
-                    Button("Smart Lense", systemImage: "camera") {
+                    Button("Smart Lense", systemImage: "text.viewfinder") {
                         onSmartLense()
                     }
                 }

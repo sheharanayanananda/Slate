@@ -28,7 +28,7 @@ struct IntelligenceTabView: View {
             LazyVGrid(columns: columns, spacing: 16) {
                 FeatureCard(
                     title: "Smart Lense",
-                    iconName: "sparkles",
+                    iconName: "text.viewfinder",
                     iconColor: smartLenseIconColor,
                     action: {
                         activeFeature = .smartLense
