@@ -2,15 +2,15 @@
 //  CreateTabView.swift
 //  Slate
 //
-//  Created by Thineth Shehara on 2026-02-08.
-//
 
 import SwiftUI
 import SwiftData
 
 struct CreateTabView: View {
     @State private var title: String = ""
-    @State private var desc: String = ""
+    @State private var blocks: [NoteBlock] = [NoteBlock(type: .paragraph, content: "")]
+    @State private var focusedBlockId: String? = nil
+    
     @Binding var editingNote: SlateModel?
     @Binding var activeTab: ContentView.TabIdentifier
 
@@ -21,45 +21,83 @@ struct CreateTabView: View {
     @State private var showErrorAlert: Bool = false
 
     private var isDescriptionEmpty: Bool {
-        var plainText = desc
-        if desc.hasPrefix("rtf:"), let data = Data(base64Encoded: String(desc.dropFirst(4))),
-           let attr = try? NSAttributedString(data: data, options: [.documentType: NSAttributedString.DocumentType.rtf], documentAttributes: nil) {
-            plainText = attr.string
-        }
-        return plainText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        return blocks.allSatisfy { $0.content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
     }
 
-    //----------------- Start of UI Code -----------------//
     var body: some View {
-        VStack(spacing: 20) {
-            TextField("Title Here", text: $title)
-                .font(.title3)
-                .padding(.horizontal, 5)
-            RichTextEditor(text: $desc)
-                .frame(minHeight: 160)
-                .overlay(alignment: .topLeading) {
-                    if desc.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                        Text("Slate it, don't store it.")
-                            .foregroundStyle(.secondary)
-                            .opacity(0.4)
-                            .padding(.horizontal, 5)
-                            .padding(.top, 8)
-                            .allowsHitTesting(false)
+        VStack(spacing: 0) {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 14) {
+                    // Note Title
+                    TextField("Title", text: $title)
+                        .font(.system(size: 28, weight: .bold))
+                        .padding(.horizontal, 4)
+                        .padding(.top, 12)
+                    
+                    Divider()
+                        .padding(.horizontal, 4)
+                        .padding(.bottom, 8)
+                    
+                    // Note Blocks
+                    ForEach(Array(blocks.enumerated()), id: \.element.id) { index, block in
+                        HStack(alignment: .top, spacing: 10) {
+                            if block.type == .checklist {
+                                Button(action: {
+                                    let generator = UIImpactFeedbackGenerator(style: .light)
+                                    generator.impactOccurred()
+                                    
+                                    withAnimation(.spring(response: 0.22, dampingFraction: 0.82)) {
+                                        blocks[index].isChecked.toggle()
+                                    }
+                                }) {
+                                    Image(systemName: block.isChecked ? "checkmark.circle.fill" : "circle")
+                                        .font(.system(size: 21, weight: .medium))
+                                        .foregroundColor(block.isChecked ? .blue : .secondary.opacity(0.6))
+                                }
+                                .buttonStyle(.plain)
+                                .padding(.top, 1)
+                            }
+                            
+                            BlockTextField(
+                                text: Binding(
+                                    get: { blocks[index].content },
+                                    set: { blocks[index].content = $0 }
+                                ),
+                                isFocused: focusedBlockId == block.id,
+                                font: blockFont(for: block.type),
+                                textColor: blockTextColor(for: block.type),
+                                isStrikethrough: block.type == .checklist && block.isChecked,
+                                onEnter: {
+                                    addBlock(after: block)
+                                },
+                                onDeleteBackward: {
+                                    mergeBlockBackward(at: index)
+                                },
+                                onFocusChanged: { isFocused in
+                                    if isFocused {
+                                        focusedBlockId = block.id
+                                    } else if focusedBlockId == block.id {
+                                        focusedBlockId = nil
+                                    }
+                                }
+                            )
+                        }
                     }
                 }
+                .padding(.horizontal, 16)
+                .padding(.bottom, 30)
+            }
         }
-        .padding()
-        .frame(maxHeight: .infinity, alignment: .top)
         .onAppear {
             if let note = editingNote {
                 title = note.title
-                desc = note.desc
+                blocks = NoteBlockParser.parse(desc: note.desc)
             }
         }
         .onChange(of: editingNote) { _, newValue in
             if let note = newValue {
                 title = note.title
-                desc = note.desc
+                blocks = NoteBlockParser.parse(desc: note.desc)
             }
         }
         .navigationTitle(editingNote == nil ? "New Note" : "Edit Note")
@@ -89,6 +127,35 @@ struct CreateTabView: View {
                 }
                 .keyboardShortcut(.defaultAction)
             }
+            
+            // Keyboard Accessory Toolbar
+            ToolbarItemGroup(placement: .keyboard) {
+                HStack(spacing: 24) {
+                    Button(action: toggleChecklist) {
+                        Image(systemName: "checklist")
+                    }
+                    
+                    Button(action: makeHeader1) {
+                        Image(systemName: "h.square.fill")
+                    }
+                    
+                    Button(action: makeHeader2) {
+                        Image(systemName: "h.circle.fill")
+                    }
+                    
+                    Button(action: makeParagraph) {
+                        Image(systemName: "paragraph")
+                    }
+                    
+                    Spacer()
+                    
+                    Button(action: {
+                        focusedBlockId = nil
+                    }) {
+                        Image(systemName: "keyboard.chevron.compact.down")
+                    }
+                }
+            }
         }
         .alert("Missing Fields", isPresented: $showEmptyWarning) {
             Button("OK", role: .cancel) { }
@@ -101,39 +168,132 @@ struct CreateTabView: View {
             Text(errorMessage ?? "An unknown error occurred.")
         }
     }
-    //----------------- End of UI Code -----------------//
     
-    func saveNote() {
+    // MARK: - Helper Methods for Font / Styling
+    private func blockFont(for type: NoteBlock.BlockType) -> UIFont {
+        switch type {
+        case .paragraph, .checklist:
+            return UIFont.preferredFont(forTextStyle: .body)
+        case .header1:
+            return UIFont.systemFont(ofSize: 24, weight: .bold)
+        case .header2:
+            return UIFont.systemFont(ofSize: 20, weight: .bold)
+        }
+    }
+    
+    private func blockTextColor(for type: NoteBlock.BlockType) -> UIColor {
+        return UIColor.label
+    }
+    
+    // MARK: - Block Editing Actions
+    private func addBlock(after block: NoteBlock) {
+        guard let index = blocks.firstIndex(where: { $0.id == block.id }) else { return }
+        let newType = block.type == .checklist ? NoteBlock.BlockType.checklist : NoteBlock.BlockType.paragraph
+        let newBlock = NoteBlock(type: newType, content: "")
+        
+        blocks.insert(newBlock, at: index + 1)
+        focusedBlockId = newBlock.id
+    }
+    
+    private func mergeBlockBackward(at index: Int) {
+        if index == 0 {
+            if blocks[0].type == .checklist {
+                blocks[0].type = .paragraph
+            }
+            return
+        }
+        
+        let currentBlock = blocks[index]
+        let previousBlock = blocks[index - 1]
+        
+        blocks[index - 1].content += currentBlock.content
+        blocks.remove(at: index)
+        focusedBlockId = previousBlock.id
+    }
+    
+    // MARK: - Keyboard Formatting Toolbar Actions
+    private func toggleChecklist() {
+        guard let focusedId = focusedBlockId,
+              let index = blocks.firstIndex(where: { $0.id == focusedId }) else { return }
+        
+        withAnimation {
+            if blocks[index].type == .checklist {
+                blocks[index].type = .paragraph
+            } else {
+                blocks[index].type = .checklist
+                blocks[index].isChecked = false
+            }
+        }
+    }
+    
+    private func makeHeader1() {
+        guard let focusedId = focusedBlockId,
+              let index = blocks.firstIndex(where: { $0.id == focusedId }) else { return }
+        
+        withAnimation {
+            blocks[index].type = .header1
+        }
+    }
+    
+    private func makeHeader2() {
+        guard let focusedId = focusedBlockId,
+              let index = blocks.firstIndex(where: { $0.id == focusedId }) else { return }
+        
+        withAnimation {
+            blocks[index].type = .header2
+        }
+    }
+    
+    private func makeParagraph() {
+        guard let focusedId = focusedBlockId,
+              let index = blocks.firstIndex(where: { $0.id == focusedId }) else { return }
+        
+        withAnimation {
+            blocks[index].type = .paragraph
+        }
+    }
+    
+    // MARK: - Note Lifetime Callbacks
+    private func saveNote() {
         let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
-        let trimmedDesc = desc.trimmingCharacters(in: .whitespacesAndNewlines)
-        if trimmedTitle.isEmpty && trimmedDesc.isEmpty {
+        if trimmedTitle.isEmpty && isDescriptionEmpty {
             showEmptyWarning = true
             return
         }
+        
+        let markdown = NoteBlockParser.serializeToMarkdown(blocks: blocks)
+        let rtfDesc = MarkdownToRTFConverter.convert(markdown)
+        
         if let note = editingNote {
             note.title = trimmedTitle
-            note.desc = trimmedDesc
+            note.desc = rtfDesc
             if note.modelContext == nil {
                 context.insert(note)
             }
         } else {
-            let note = SlateModel(title: trimmedTitle, desc: trimmedDesc)
+            let note = SlateModel(title: trimmedTitle, desc: rtfDesc)
             context.insert(note)
         }
         
-        try? context.save()
         reset()
         activeTab = .notes
     }
     
-    func summarizeNote() {
-        var plainText = desc
-        if desc.hasPrefix("rtf:"), let data = Data(base64Encoded: String(desc.dropFirst(4))),
-           let attr = try? NSAttributedString(data: data, options: [.documentType: NSAttributedString.DocumentType.rtf], documentAttributes: nil) {
-            plainText = attr.string
-        }
-        
-        let trimmedDesc = plainText.trimmingCharacters(in: .whitespacesAndNewlines)
+    private func cancel() {
+        reset()
+        activeTab = .notes
+    }
+    
+    private func reset() {
+        title = ""
+        blocks = [NoteBlock(type: .paragraph, content: "")]
+        focusedBlockId = nil
+        editingNote = nil
+    }
+    
+    private func summarizeNote() {
+        let markdown = NoteBlockParser.serializeToMarkdown(blocks: blocks)
+        let trimmedDesc = markdown.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedDesc.isEmpty else { return }
         
         isSummarizing = true
@@ -158,8 +318,9 @@ struct CreateTabView: View {
                     prompt: noteContent,
                     system: systemPrompt
                 )
+                
                 await MainActor.run {
-                    desc = summary
+                    blocks = NoteBlockParser.parse(desc: summary)
                     isSummarizing = false
                 }
             } catch {
@@ -171,26 +332,4 @@ struct CreateTabView: View {
             }
         }
     }
-    
-    func reset() {
-        title = ""
-        desc = ""
-        editingNote = nil
-    }
-
-    func cancel() {
-        dismissKeyboard()
-        reset()
-        activeTab = .notes
-    }
-
-    func dismissKeyboard() {
-        #if canImport(UIKit)
-        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
-        #endif
-    }
-}
-
-#Preview {
-    ContentView()
 }
