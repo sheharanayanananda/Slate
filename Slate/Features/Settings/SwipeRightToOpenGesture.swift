@@ -1,15 +1,22 @@
 import SwiftUI
 
-struct SwipeRightGestureModifier: ViewModifier {
+enum SwipeDirection {
+    case right
+    case left
+}
+
+struct DirectionalSwipeGestureModifier: ViewModifier {
     var isEnabled: Bool
+    var direction: SwipeDirection
     var onDragChanged: (CGFloat) -> Void
     var onDragEnded: (CGFloat, CGFloat) -> Void
 
     func body(content: Content) -> some View {
         content
             .background(
-                SwipeRightGestureControllerRepresentable(
+                DirectionalSwipeGestureControllerRepresentable(
                     isEnabled: isEnabled,
+                    direction: direction,
                     onDragChanged: onDragChanged,
                     onDragEnded: onDragEnded
                 )
@@ -17,28 +24,32 @@ struct SwipeRightGestureModifier: ViewModifier {
     }
 }
 
-struct SwipeRightGestureControllerRepresentable: UIViewControllerRepresentable {
+struct DirectionalSwipeGestureControllerRepresentable: UIViewControllerRepresentable {
     var isEnabled: Bool
+    var direction: SwipeDirection
     var onDragChanged: (CGFloat) -> Void
     var onDragEnded: (CGFloat, CGFloat) -> Void
 
-    func makeUIViewController(context: Context) -> SwipeRightGestureViewController {
-        let vc = SwipeRightGestureViewController()
+    func makeUIViewController(context: Context) -> DirectionalSwipeGestureViewController {
+        let vc = DirectionalSwipeGestureViewController()
         vc.onDragChanged = onDragChanged
         vc.onDragEnded = onDragEnded
         vc.isEnabled = isEnabled
+        vc.direction = direction
         return vc
     }
 
-    func updateUIViewController(_ uiViewController: SwipeRightGestureViewController, context: Context) {
+    func updateUIViewController(_ uiViewController: DirectionalSwipeGestureViewController, context: Context) {
         uiViewController.onDragChanged = onDragChanged
         uiViewController.onDragEnded = onDragEnded
         uiViewController.isEnabled = isEnabled
+        uiViewController.direction = direction
     }
 }
 
-class SwipeRightGestureViewController: UIViewController, UIGestureRecognizerDelegate {
+class DirectionalSwipeGestureViewController: UIViewController, UIGestureRecognizerDelegate {
     var isEnabled: Bool = false
+    var direction: SwipeDirection = .right
     var onDragChanged: ((CGFloat) -> Void)?
     var onDragEnded: ((CGFloat, CGFloat) -> Void)?
     
@@ -80,8 +91,15 @@ class SwipeRightGestureViewController: UIViewController, UIGestureRecognizerDele
         guard let pan = gestureRecognizer as? UIPanGestureRecognizer else { return false }
         let velocity = pan.velocity(in: pan.view)
         
-        // Only trigger on left-to-right horizontal swipe
-        return velocity.x > 0 && abs(velocity.x) > abs(velocity.y) * 1.5
+        let isHorizontal = abs(velocity.x) > abs(velocity.y) * 1.5
+        guard isHorizontal else { return false }
+        
+        switch direction {
+        case .right:
+            return velocity.x > 0
+        case .left:
+            return velocity.x < 0
+        }
     }
 
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {
@@ -91,6 +109,10 @@ class SwipeRightGestureViewController: UIViewController, UIGestureRecognizerDele
 
 extension View {
     func onSwipeRightToOpen(isEnabled: Bool, onDragChanged: @escaping (CGFloat) -> Void, onDragEnded: @escaping (CGFloat, CGFloat) -> Void) -> some View {
-        self.modifier(SwipeRightGestureModifier(isEnabled: isEnabled, onDragChanged: onDragChanged, onDragEnded: onDragEnded))
+        self.modifier(DirectionalSwipeGestureModifier(isEnabled: isEnabled, direction: .right, onDragChanged: onDragChanged, onDragEnded: onDragEnded))
+    }
+    
+    func onSwipeLeftToClose(isEnabled: Bool, onDragChanged: @escaping (CGFloat) -> Void, onDragEnded: @escaping (CGFloat, CGFloat) -> Void) -> some View {
+        self.modifier(DirectionalSwipeGestureModifier(isEnabled: isEnabled, direction: .left, onDragChanged: onDragChanged, onDragEnded: onDragEnded))
     }
 }

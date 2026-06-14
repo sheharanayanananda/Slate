@@ -19,6 +19,7 @@ struct ContentView: View {
     @State private var quickFeature: FeatureType? = nil
     @State private var showSettings = false
     @State private var settingsDragOffset: CGFloat = 0
+    @State private var isTransitioningSettings = false
     @State private var settingsViewModel = SettingsViewModel()
 
     @Environment(\.modelContext) private var context
@@ -89,41 +90,50 @@ struct ContentView: View {
                     }
                 )
                 
-                if showSettings || settingsDragOffset > 0 {
-                    NavigationStack {
-                        SettingsView(viewModel: settingsViewModel, onDismiss: {
-                            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                NavigationStack {
+                    SettingsView(viewModel: settingsViewModel, onDismiss: {
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                            showSettings = false
+                        }
+                    })
+                    .disabled(!showSettings || settingsDragOffset != 0 || isTransitioningSettings)
+                }
+                .offset(x: settingsXOffset(screenWidth: screenWidth))
+                .zIndex(1)
+                .onSwipeLeftToClose(
+                    isEnabled: showSettings,
+                    onDragChanged: { translation in
+                        if translation < 0 {
+                            settingsDragOffset = translation
+                        }
+                    },
+                    onDragEnded: { translation, velocity in
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+                            if translation < -screenWidth / 3 || velocity < -500 {
                                 showSettings = false
                             }
-                        })
-                        .disabled(settingsDragOffset != 0)
+                            settingsDragOffset = 0
+                        }
                     }
-                    .offset(x: settingsXOffset(screenWidth: screenWidth))
-                    .zIndex(1)
-                    .simultaneousGesture(
-                        DragGesture(minimumDistance: 10)
-                            .onChanged { value in
-                                if value.translation.width < 0 {
-                                    settingsDragOffset = value.translation.width
-                                }
-                            }
-                            .onEnded { value in
-                                withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                                    let predictedEnd = value.predictedEndTranslation.width
-                                    if value.translation.width < -screenWidth / 3 || predictedEnd < -screenWidth / 2 {
-                                        showSettings = false
-                                    }
-                                    settingsDragOffset = 0
-                                }
-                            }
-                    )
-                }
+                )
             }
             .onChange(of: showSettings) { oldValue, newValue in
+                isTransitioningSettings = true
                 if newValue {
-                    let generator = UIImpactFeedbackGenerator(style: .medium)
-                    generator.prepare()
-                    generator.impactOccurred()
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                        if showSettings {
+                            let generator = UIImpactFeedbackGenerator(style: .medium)
+                            generator.prepare()
+                            generator.impactOccurred()
+                        }
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                            isTransitioningSettings = false
+                        }
+                    }
+                } else {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                        isTransitioningSettings = false
+                    }
                 }
             }
         }
