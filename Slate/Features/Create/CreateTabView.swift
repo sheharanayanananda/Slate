@@ -16,6 +16,9 @@ struct CreateTabView: View {
 
     @Environment(\.modelContext) private var context
     @State private var showEmptyWarning: Bool = false
+    @State private var isSummarizing: Bool = false
+    @State private var errorMessage: String? = nil
+    @State private var showErrorAlert: Bool = false
 
     //----------------- Start of UI Code -----------------//
     var body: some View {
@@ -60,16 +63,33 @@ struct CreateTabView: View {
             }
                         
             ToolbarItem(placement: .confirmationAction) {
-                Button("Save", systemImage: "checkmark", role: .confirm) {
-                    saveNote()
+                HStack(spacing: 16) {
+                    if isSummarizing {
+                        ProgressView()
+                            .controlSize(.small)
+                    } else {
+                        Button(action: summarizeNote) {
+                            Image(systemName: "text.line.3.summary")
+                        }
+                        .disabled(desc.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    }
+                    
+                    Button("Save", systemImage: "checkmark", role: .confirm) {
+                        saveNote()
+                    }
+                    .keyboardShortcut(.defaultAction)
                 }
-                .keyboardShortcut(.defaultAction)
             }
         }
         .alert("Missing Fields", isPresented: $showEmptyWarning) {
             Button("OK", role: .cancel) { }
         } message: {
             Text("Can't save without the title or description. Try again!")
+        }
+        .alert("Error", isPresented: $showErrorAlert) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(errorMessage ?? "An unknown error occurred.")
         }
     }
     //----------------- End of UI Code -----------------//
@@ -95,6 +115,34 @@ struct CreateTabView: View {
         try? context.save()
         reset()
         activeTab = .notes
+    }
+    
+    func summarizeNote() {
+        let trimmedDesc = desc.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedDesc.isEmpty else { return }
+        
+        isSummarizing = true
+        errorMessage = nil
+        
+        Task {
+            do {
+                let client = OllamaClient()
+                let summary = try await client.generate(
+                    prompt: trimmedDesc,
+                    system: "Please summarize the following text in a concise, bulleted manner."
+                )
+                await MainActor.run {
+                    desc = desc + "\n\n**Summary:**\n" + summary
+                    isSummarizing = false
+                }
+            } catch {
+                await MainActor.run {
+                    errorMessage = error.localizedDescription
+                    showErrorAlert = true
+                    isSummarizing = false
+                }
+            }
+        }
     }
     
     func reset() {

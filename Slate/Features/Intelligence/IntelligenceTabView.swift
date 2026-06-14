@@ -44,7 +44,7 @@ struct IntelligenceTabView: View {
                 )
                 FeatureCard(
                     title: "Summarize",
-                    iconName: "list.bullet.below.rectangle",
+                    iconName: "text.line.3.summary",
                     iconColor: summarizeIconColor,
                     action: {
                         activeFeature = .summarize
