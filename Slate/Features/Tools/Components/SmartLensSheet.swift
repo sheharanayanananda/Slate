@@ -1,11 +1,11 @@
 //
-//  SmartLenseSheet.swift
+//  SmartLensSheet.swift
 //  Slate
 //
 
 import SwiftUI
 
-struct SmartLenseSheet: View {
+struct SmartLensSheet: View {
     @Binding var editingNote: SlateModel?
     @Binding var activeTab: ContentView.TabIdentifier
     @Environment(\.dismiss) private var dismiss
@@ -14,9 +14,16 @@ struct SmartLenseSheet: View {
     @State private var takePhoto = false
     @State private var presentationDetent: PresentationDetent = .medium
     @State private var isProcessing: Bool = false
+    @State private var processState: ProcessState = .analyzing
     @State private var processStatus: String = "Analyzing Image"
     @State private var errorMessage: String? = nil
     @State private var showErrorAlert: Bool = false
+    
+    enum ProcessState {
+        case analyzing
+        case completed
+        case failed
+    }
     
     var body: some View {
         NavigationStack {
@@ -33,7 +40,9 @@ struct SmartLenseSheet: View {
                                 Button(role: .cancel, action: {
                                     capturedImage = nil
                                     presentationDetent = .medium
-                                })
+                                }) {
+                                    Text("Retake")
+                                }
                             }
                             ToolbarItem(placement: .navigationBarTrailing) {
                                 Button("Process") {
@@ -64,7 +73,6 @@ struct SmartLenseSheet: View {
                             Circle()
                                 .fill(.clear)
                                 .glassEffect(Glass.clear.tint(.clear), in: .rect(cornerRadius: 100))
-//                                .fill(Color.white.opacity(0.5))
                                 .frame(width: 80, height: 80)
                                 .shadow(radius: 5)
                                 .overlay(
@@ -91,7 +99,7 @@ struct SmartLenseSheet: View {
                         Color.black.opacity(0.2).ignoresSafeArea()
 
                         VStack(spacing: 16) {
-                            if processStatus == "Process Completed" {
+                            if processState == .completed {
                                 Image(systemName: "checkmark.circle.fill")
                                     .font(.system(size: 40))
                                     .foregroundColor(.green)
@@ -105,13 +113,10 @@ struct SmartLenseSheet: View {
                         .padding(24)
                         .background(
                             ZStack {
-                                // Base glass material
                                 RoundedRectangle(cornerRadius: 30, style: .continuous)
                                     .fill(.clear)
                                     .glassEffect(Glass.clear.tint(.clear), in: .rect(cornerRadius: 30))
-//                                    .fill(.ultraThinMaterial)
 
-                                // Soft inner glow for depth
                                 RoundedRectangle(cornerRadius: 30, style: .continuous)
                                     .fill(
                                         LinearGradient(
@@ -125,7 +130,6 @@ struct SmartLenseSheet: View {
                                     )
                                     .blendMode(.overlay)
 
-                                // Subtle top highlight to sell the glass effect
                                 RoundedRectangle(cornerRadius: 30, style: .continuous)
                                     .stroke(
                                         LinearGradient(
@@ -146,37 +150,12 @@ struct SmartLenseSheet: View {
                     .transition(.opacity)
                 }
             }
-//            .overlay {
-//                if isProcessing {
-//                    ZStack {
-//                        Color.black.opacity(0.4).ignoresSafeArea()
-//                        VStack(spacing: 16) {
-//                            if processStatus == "Process Completed" {
-//                                Image(systemName: "checkmark.circle.fill")
-//                                    .font(.system(size: 40))
-//                                    .foregroundColor(.green)
-//                            } else {
-//                                ProgressView()
-//                                    .controlSize(.large)
-//                            }
-//                            Text(processStatus)
-//                                .font(.headline)
-//                        }
-//                        .padding(24)
-//                        .background {
-//                            RoundedRectangle(cornerRadius: 40, style: .continuous)
-//                                .fill(.clear)
-//                                .glassEffect(Glass.clear.tint(.clear), in: .rect(cornerRadius: 30))
-//                        }
-//                        .shadow(color: .black.opacity(0.2), radius: 10, x: 0, y: 5)
-//                    }
-//                }
-//            }
         }
     }
     
     func createAINote(with image: UIImage) {
         isProcessing = true
+        processState = .analyzing
         processStatus = "Analyzing Image"
         
         Task {
@@ -209,6 +188,7 @@ struct SmartLenseSheet: View {
                 let parsed = parseResponse(response)
                 
                 await MainActor.run {
+                    processState = .completed
                     processStatus = "Process Completed"
                 }
                 
@@ -222,13 +202,11 @@ struct SmartLenseSheet: View {
                 }
             } catch {
                 await MainActor.run {
+                    processState = .failed
                     processStatus = "Failed to analyze"
                     errorMessage = error.localizedDescription
                     showErrorAlert = true
-                }
-                try await Task.sleep(nanoseconds: 2_000_000_000)
-                await MainActor.run {
-                    isProcessing = false
+                    isProcessing = false // Reset immediately on error so UI is not frozen
                 }
                 print("Failed to generate AI note: \(error)")
             }

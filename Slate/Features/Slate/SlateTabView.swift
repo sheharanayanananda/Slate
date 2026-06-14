@@ -21,23 +21,23 @@ struct SlateTabView: View {
     let onOpenSettings: () -> Void
     let onCreate: () -> Void
     let onSelect: (SlateModel) -> Void
-    let onSmartLense: () -> Void
-    let onTranscript: () -> Void
+    let onSmartLens: () -> Void
+    let onTranscribe: () -> Void
 
     init(
         showSettings: Binding<Bool>,
         onOpenSettings: @escaping () -> Void = {},
         onCreate: @escaping () -> Void = {},
         onSelect: @escaping (SlateModel) -> Void = { _ in },
-        onSmartLense: @escaping () -> Void = {},
-        onTranscript: @escaping () -> Void = {}
+        onSmartLens: @escaping () -> Void = {},
+        onTranscribe: @escaping () -> Void = {}
     ) {
         self._showSettings = showSettings
         self.onOpenSettings = onOpenSettings
         self.onCreate = onCreate
         self.onSelect = onSelect
-        self.onSmartLense = onSmartLense
-        self.onTranscript = onTranscript
+        self.onSmartLens = onSmartLens
+        self.onTranscribe = onTranscribe
     }
 
     //----------------- Start of UI Code -----------------//
@@ -119,11 +119,11 @@ struct SlateTabView: View {
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 HStack(spacing: 16) {
-                    Button("Transcript", systemImage: "waveform") {
-                        onTranscript()
+                    Button("Transcribe", systemImage: "waveform") {
+                        onTranscribe()
                     }
-                    Button("Smart Lense", systemImage: "text.viewfinder") {
-                        onSmartLense()
+                    Button("Smart Lens", systemImage: "text.viewfinder") {
+                        onSmartLens()
                     }
                 }
             }

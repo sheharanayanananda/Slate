@@ -15,6 +15,7 @@ struct CameraView: UIViewControllerRepresentable {
         let controller = CameraViewController()
         controller.onPhotoCapture = { image in
             DispatchQueue.main.async {
+                takePhoto = false // reset trigger after capture completes
                 onPhotoCaptured(image)
             }
         }
@@ -24,9 +25,6 @@ struct CameraView: UIViewControllerRepresentable {
     func updateUIViewController(_ uiViewController: CameraViewController, context: Context) {
         if takePhoto {
             uiViewController.capturePhoto()
-            DispatchQueue.main.async {
-                takePhoto = false // reset trigger
-            }
         }
     }
 }

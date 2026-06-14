@@ -16,7 +16,7 @@ struct ContentView: View {
 
     @State private var activeTab: TabIdentifier = .notes
     @State private var editingNote: SlateModel? = nil
-    @State private var quickFeature: FeatureType? = nil
+    @State private var quickTool: ToolType? = nil
     @State private var showSettings = false
 
     @State private var isSettingsVisible = false
@@ -58,8 +58,8 @@ struct ContentView: View {
                                     editingNote = note
                                     activeTab = .create
                                 },
-                                onSmartLense: { quickFeature = .smartLense },
-                                onTranscript: { quickFeature = .transcript }
+                                onSmartLens: { quickTool = .smartLens },
+                                onTranscribe: { quickTool = .transcribe }
                             )
                         }
                     }
@@ -72,12 +72,12 @@ struct ContentView: View {
                     
                     Tab("Tools", systemImage: "sparkles", value: .intelligence) {
                         NavigationStack {
-                            IntelligenceTabView(editingNote: $editingNote, activeTab: $activeTab)
+                            ToolsTabView(editingNote: $editingNote, activeTab: $activeTab)
                         }
                     }
                 }
-                .sheet(item: $quickFeature) { type in
-                    FeatureSheet(type: type, editingNote: $editingNote, activeTab: $activeTab)
+                .sheet(item: $quickTool) { tool in
+                    ToolSheet(type: tool, editingNote: $editingNote, activeTab: $activeTab)
                 }
 
                 if isSettingsVisible {
