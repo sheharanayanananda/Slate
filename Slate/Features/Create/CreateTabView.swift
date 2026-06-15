@@ -10,6 +10,8 @@ struct CreateTabView: View {
     @State private var title: String = ""
     @State private var blocks: [NoteBlock] = [NoteBlock(type: .paragraph, content: "")]
     @State private var focusedBlockId: String? = nil
+    @State private var selectedTextRange: NSRange? = nil
+    @State private var showFormattingSheet: Bool = false
     
     @Binding var editingNote: SlateModel?
     @Binding var activeTab: ContentView.TabIdentifier
@@ -30,7 +32,7 @@ struct CreateTabView: View {
                 VStack(alignment: .leading, spacing: 14) {
                     // Note Title
                     TextField("Title", text: $title)
-                        .font(.system(size: 28, weight: .bold))
+                        .font(.system(size: 17, weight: .bold))
                         .padding(.horizontal, 4)
                         .padding(.top, 12)
                     
@@ -41,6 +43,13 @@ struct CreateTabView: View {
                     // Note Blocks
                     ForEach(Array(blocks.enumerated()), id: \.element.id) { index, block in
                         HStack(alignment: .top, spacing: 10) {
+                            // Indentation Padding
+                            if block.indent > 0 {
+                                Spacer()
+                                    .frame(width: CGFloat(block.indent * 20))
+                            }
+                            
+                            // Left-side Block Type Indicator (Checklist circle, Bullet dot, Number)
                             if block.type == .checklist {
                                 Button(action: {
                                     let generator = UIImpactFeedbackGenerator(style: .light)
@@ -56,6 +65,19 @@ struct CreateTabView: View {
                                 }
                                 .buttonStyle(.plain)
                                 .padding(.top, 1)
+                            } else if block.type == .bullet {
+                                Image(systemName: "circle.fill")
+                                    .font(.system(size: 6))
+                                    .foregroundColor(.secondary)
+                                    .padding(.top, 9)
+                                    .padding(.horizontal, 8)
+                            } else if block.type == .numbered {
+                                let itemNumber = calculateNumberedIndex(at: index)
+                                Text("\(itemNumber).")
+                                    .font(.system(size: 16, weight: .regular))
+                                    .foregroundColor(.secondary)
+                                    .frame(width: 20, alignment: .trailing)
+                                    .padding(.top, 2)
                             }
                             
                             BlockTextField(
@@ -67,6 +89,10 @@ struct CreateTabView: View {
                                 font: blockFont(for: block.type),
                                 textColor: blockTextColor(for: block.type),
                                 isStrikethrough: block.type == .checklist && block.isChecked,
+                                selectedRange: Binding(
+                                    get: { focusedBlockId == block.id ? selectedTextRange : nil },
+                                    set: { if focusedBlockId == block.id { selectedTextRange = $0 } }
+                                ),
                                 onEnter: {
                                     addBlock(after: block)
                                 },
@@ -79,6 +105,29 @@ struct CreateTabView: View {
                                     } else if focusedBlockId == block.id {
                                         focusedBlockId = nil
                                     }
+                                },
+                                onToggleFormat: {
+                                    let generator = UIImpactFeedbackGenerator(style: .light)
+                                    generator.impactOccurred()
+                                    showFormattingSheet = true
+                                },
+                                onToggleChecklist: {
+                                    toggleBlockType(to: .checklist)
+                                },
+                                onToggleBullet: {
+                                    toggleBlockType(to: .bullet)
+                                },
+                                onToggleNumbered: {
+                                    toggleBlockType(to: .numbered)
+                                },
+                                onDecreaseIndent: {
+                                    changeIndent(by: -1)
+                                },
+                                onIncreaseIndent: {
+                                    changeIndent(by: 1)
+                                },
+                                onDismissKeyboard: {
+                                    focusedBlockId = nil
                                 }
                             )
                         }
@@ -130,21 +179,44 @@ struct CreateTabView: View {
             
             // Keyboard Accessory Toolbar
             ToolbarItemGroup(placement: .keyboard) {
-                HStack(spacing: 24) {
-                    Button(action: toggleChecklist) {
+                HStack(spacing: 20) {
+                    Button(action: {
+                        let generator = UIImpactFeedbackGenerator(style: .light)
+                        generator.impactOccurred()
+                        showFormattingSheet = true
+                    }) {
+                        Image(systemName: "textformat")
+                            .font(.system(size: 18, weight: .medium))
+                    }
+                    
+                    Button(action: {
+                        toggleBlockType(to: .checklist)
+                    }) {
                         Image(systemName: "checklist")
                     }
                     
-                    Button(action: makeHeader1) {
-                        Image(systemName: "h.square.fill")
+                    Button(action: {
+                        toggleBlockType(to: .bullet)
+                    }) {
+                        Image(systemName: "list.bullet")
                     }
                     
-                    Button(action: makeHeader2) {
-                        Image(systemName: "h.circle.fill")
+                    Button(action: {
+                        toggleBlockType(to: .numbered)
+                    }) {
+                        Image(systemName: "list.number")
                     }
                     
-                    Button(action: makeParagraph) {
-                        Image(systemName: "paragraph")
+                    Button(action: {
+                        changeIndent(by: -1)
+                    }) {
+                        Image(systemName: "decrease.indent")
+                    }
+                    
+                    Button(action: {
+                        changeIndent(by: 1)
+                    }) {
+                        Image(systemName: "increase.indent")
                     }
                     
                     Spacer()
@@ -156,6 +228,16 @@ struct CreateTabView: View {
                     }
                 }
             }
+        }
+        .sheet(isPresented: $showFormattingSheet) {
+            FormattingSheet(
+                blocks: $blocks,
+                focusedBlockId: focusedBlockId,
+                selectedTextRange: $selectedTextRange
+            )
+            .presentationDetents([.height(280)])
+            .presentationDragIndicator(.visible)
+            .presentationBackgroundInteraction(.enabled(upThrough: .height(280)))
         }
         .alert("Missing Fields", isPresented: $showEmptyWarning) {
             Button("OK", role: .cancel) { }
@@ -172,12 +254,14 @@ struct CreateTabView: View {
     // MARK: - Helper Methods for Font / Styling
     private func blockFont(for type: NoteBlock.BlockType) -> UIFont {
         switch type {
-        case .paragraph, .checklist:
+        case .paragraph, .checklist, .bullet, .numbered:
             return UIFont.preferredFont(forTextStyle: .body)
         case .header1:
             return UIFont.systemFont(ofSize: 24, weight: .bold)
         case .header2:
             return UIFont.systemFont(ofSize: 20, weight: .bold)
+        case .subheading:
+            return UIFont.systemFont(ofSize: 18, weight: .semibold)
         }
     }
     
@@ -188,68 +272,117 @@ struct CreateTabView: View {
     // MARK: - Block Editing Actions
     private func addBlock(after block: NoteBlock) {
         guard let index = blocks.firstIndex(where: { $0.id == block.id }) else { return }
-        let newType = block.type == .checklist ? NoteBlock.BlockType.checklist : NoteBlock.BlockType.paragraph
-        let newBlock = NoteBlock(type: newType, content: "")
         
-        blocks.insert(newBlock, at: index + 1)
+        if block.content.isEmpty {
+            if block.indent > 0 {
+                withAnimation(.spring(response: 0.2, dampingFraction: 0.85)) {
+                    blocks[index].indent -= 1
+                }
+                return
+            } else if block.type != .paragraph {
+                withAnimation(.spring(response: 0.2, dampingFraction: 0.85)) {
+                    blocks[index].type = .paragraph
+                }
+                return
+            }
+        }
+        
+        let newType: NoteBlock.BlockType
+        switch block.type {
+        case .checklist:
+            newType = .checklist
+        case .bullet:
+            newType = .bullet
+        case .numbered:
+            newType = .numbered
+        default:
+            newType = .paragraph
+        }
+        
+        let newBlock = NoteBlock(type: newType, content: "", isChecked: false, indent: block.indent)
+        
+        withAnimation(.spring(response: 0.22, dampingFraction: 0.82)) {
+            blocks.insert(newBlock, at: index + 1)
+        }
         focusedBlockId = newBlock.id
     }
     
     private func mergeBlockBackward(at index: Int) {
-        if index == 0 {
-            if blocks[0].type == .checklist {
-                blocks[0].type = .paragraph
+        let currentBlock = blocks[index]
+        
+        if currentBlock.indent > 0 {
+            withAnimation(.spring(response: 0.2, dampingFraction: 0.85)) {
+                blocks[index].indent -= 1
             }
             return
         }
         
-        let currentBlock = blocks[index]
+        if currentBlock.type != .paragraph && currentBlock.content.isEmpty {
+            withAnimation(.spring(response: 0.2, dampingFraction: 0.85)) {
+                blocks[index].type = .paragraph
+            }
+            return
+        }
+        
+        if index == 0 {
+            return
+        }
+        
         let previousBlock = blocks[index - 1]
         
-        blocks[index - 1].content += currentBlock.content
-        blocks.remove(at: index)
+        withAnimation(.spring(response: 0.2, dampingFraction: 0.85)) {
+            blocks[index - 1].content += currentBlock.content
+            blocks.remove(at: index)
+        }
         focusedBlockId = previousBlock.id
     }
     
-    // MARK: - Keyboard Formatting Toolbar Actions
-    private func toggleChecklist() {
-        guard let focusedId = focusedBlockId,
-              let index = blocks.firstIndex(where: { $0.id == focusedId }) else { return }
+    private func calculateNumberedIndex(at index: Int) -> Int {
+        let block = blocks[index]
+        guard block.type == .numbered else { return 1 }
         
-        withAnimation {
-            if blocks[index].type == .checklist {
+        var count = 1
+        var idx = index - 1
+        while idx >= 0 {
+            let prev = blocks[idx]
+            if prev.indent == block.indent {
+                if prev.type == .numbered {
+                    count += 1
+                } else if prev.type != .paragraph || !prev.content.isEmpty {
+                    break
+                }
+            } else if prev.indent < block.indent {
+                break
+            }
+            idx -= 1
+        }
+        return count
+    }
+    
+    // MARK: - Keyboard Formatting Actions
+    private func toggleBlockType(to type: NoteBlock.BlockType) {
+        guard let id = focusedBlockId,
+              let index = blocks.firstIndex(where: { $0.id == id }) else { return }
+        
+        withAnimation(.spring(response: 0.22, dampingFraction: 0.82)) {
+            if blocks[index].type == type {
                 blocks[index].type = .paragraph
             } else {
-                blocks[index].type = .checklist
-                blocks[index].isChecked = false
+                blocks[index].type = type
+                if type == .checklist {
+                    blocks[index].isChecked = false
+                }
             }
         }
     }
     
-    private func makeHeader1() {
-        guard let focusedId = focusedBlockId,
-              let index = blocks.firstIndex(where: { $0.id == focusedId }) else { return }
+    private func changeIndent(by delta: Int) {
+        guard let id = focusedBlockId,
+              let index = blocks.firstIndex(where: { $0.id == id }) else { return }
         
-        withAnimation {
-            blocks[index].type = .header1
-        }
-    }
-    
-    private func makeHeader2() {
-        guard let focusedId = focusedBlockId,
-              let index = blocks.firstIndex(where: { $0.id == focusedId }) else { return }
-        
-        withAnimation {
-            blocks[index].type = .header2
-        }
-    }
-    
-    private func makeParagraph() {
-        guard let focusedId = focusedBlockId,
-              let index = blocks.firstIndex(where: { $0.id == focusedId }) else { return }
-        
-        withAnimation {
-            blocks[index].type = .paragraph
+        withAnimation(.spring(response: 0.22, dampingFraction: 0.82)) {
+            let current = blocks[index].indent
+            blocks[index].indent = max(0, min(5, current + delta))
         }
     }
     
@@ -333,3 +466,173 @@ struct CreateTabView: View {
         }
     }
 }
+
+struct FormattingSheet: View {
+    @Binding var blocks: [NoteBlock]
+    var focusedBlockId: String?
+    @Binding var selectedTextRange: NSRange?
+    
+    @Environment(\.dismiss) private var dismiss
+    
+    private var activeBlockIndex: Int? {
+        guard let id = focusedBlockId else { return nil }
+        return blocks.firstIndex(where: { $0.id == id })
+    }
+    
+    var body: some View {
+        VStack(spacing: 16) {
+            Text("Format")
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundColor(.secondary)
+                .padding(.top, 12)
+            
+            // 1. Text Style Selection (Title, Heading, Subheading, Body)
+            HStack(spacing: 8) {
+                styleButton(title: "Title", type: .header1)
+                styleButton(title: "Heading", type: .header2)
+                styleButton(title: "Subheading", type: .subheading)
+                styleButton(title: "Body", type: .paragraph)
+            }
+            .padding(.horizontal, 16)
+            
+            // 2. Inline styles (Bold, Italic, Strikethrough) & Indentation
+            HStack(spacing: 12) {
+                HStack(spacing: 2) {
+                    inlineStyleButton(systemImage: "bold", wrapper: "**")
+                    inlineStyleButton(systemImage: "italic", wrapper: "*")
+                    inlineStyleButton(systemImage: "strikethrough", wrapper: "~~")
+                }
+                .background(Color(.systemGray6))
+                .cornerRadius(10)
+                
+                Spacer()
+                
+                HStack(spacing: 2) {
+                    indentButton(systemImage: "decrease.indent", delta: -1)
+                    indentButton(systemImage: "increase.indent", delta: 1)
+                }
+                .background(Color(.systemGray6))
+                .cornerRadius(10)
+            }
+            .padding(.horizontal, 16)
+            
+            // 3. Block Lists
+            HStack(spacing: 10) {
+                listTypeButton(title: "Checklist", systemImage: "checklist", type: .checklist)
+                listTypeButton(title: "Bulleted", systemImage: "list.bullet", type: .bullet)
+                listTypeButton(title: "Numbered", systemImage: "list.number", type: .numbered)
+            }
+            .padding(.horizontal, 16)
+            .padding(.bottom, 16)
+        }
+        .background(Color(.systemBackground))
+    }
+    
+    private func styleButton(title: String, type: NoteBlock.BlockType) -> some View {
+        let isActive = activeBlockIndex != nil && blocks[activeBlockIndex!].type == type
+        
+        return Button(action: {
+            guard let idx = activeBlockIndex else { return }
+            let generator = UIImpactFeedbackGenerator(style: .light)
+            generator.impactOccurred()
+            withAnimation(.spring(response: 0.2, dampingFraction: 0.85)) {
+                blocks[idx].type = type
+            }
+        }) {
+            Text(title)
+                .font(.system(size: 14, weight: isActive ? .bold : .medium))
+                .foregroundColor(isActive ? .white : .primary)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 10)
+                .background(isActive ? Color.blue : Color(.systemGray6))
+                .cornerRadius(10)
+        }
+        .buttonStyle(.plain)
+    }
+    
+    private func inlineStyleButton(systemImage: String, wrapper: String) -> some View {
+        Button(action: {
+            guard let idx = activeBlockIndex else { return }
+            let generator = UIImpactFeedbackGenerator(style: .light)
+            generator.impactOccurred()
+            
+            let content = blocks[idx].content
+            let nsString = content as NSString
+            let range = selectedTextRange ?? NSRange(location: nsString.length, length: 0)
+            let selectedText = nsString.substring(with: range)
+            
+            let newSubstring: String
+            if selectedText.hasPrefix(wrapper) && selectedText.hasSuffix(wrapper) {
+                newSubstring = String(selectedText.dropFirst(wrapper.count).dropLast(wrapper.count))
+            } else {
+                newSubstring = wrapper + selectedText + wrapper
+            }
+            
+            let newContent = nsString.replacingCharacters(in: range, with: newSubstring)
+            blocks[idx].content = newContent
+            
+            let newLength = newSubstring.count
+            selectedTextRange = NSRange(location: range.location, length: newLength)
+        }) {
+            Image(systemName: systemImage)
+                .font(.system(size: 16, weight: .medium))
+                .foregroundColor(.primary)
+                .frame(width: 44, height: 38)
+        }
+        .buttonStyle(.plain)
+    }
+    
+    private func indentButton(systemImage: String, delta: Int) -> some View {
+        Button(action: {
+            guard let idx = activeBlockIndex else { return }
+            let generator = UIImpactFeedbackGenerator(style: .light)
+            generator.impactOccurred()
+            
+            withAnimation(.spring(response: 0.22, dampingFraction: 0.82)) {
+                let current = blocks[idx].indent
+                blocks[idx].indent = max(0, min(5, current + delta))
+            }
+        }) {
+            Image(systemName: systemImage)
+                .font(.system(size: 16, weight: .medium))
+                .foregroundColor(.primary)
+                .frame(width: 44, height: 38)
+        }
+        .buttonStyle(.plain)
+    }
+    
+    private func listTypeButton(title: String, systemImage: String, type: NoteBlock.BlockType) -> some View {
+        let isActive = activeBlockIndex != nil && blocks[activeBlockIndex!].type == type
+        
+        return Button(action: {
+            guard let idx = activeBlockIndex else { return }
+            let generator = UIImpactFeedbackGenerator(style: .light)
+            generator.impactOccurred()
+            
+            withAnimation(.spring(response: 0.22, dampingFraction: 0.82)) {
+                if blocks[idx].type == type {
+                    blocks[idx].type = .paragraph
+                } else {
+                    blocks[idx].type = type
+                    if type == .checklist {
+                        blocks[idx].isChecked = false
+                    }
+                }
+            }
+        }) {
+            HStack(spacing: 8) {
+                Image(systemName: systemImage)
+                    .font(.system(size: 14, weight: .medium))
+                Text(title)
+                    .font(.system(size: 13, weight: .semibold))
+            }
+            .foregroundColor(isActive ? .white : .primary)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 10)
+            .background(isActive ? Color.blue : Color(.systemGray6))
+            .cornerRadius(10)
+        }
+        .buttonStyle(.plain)
+    }
+}
+

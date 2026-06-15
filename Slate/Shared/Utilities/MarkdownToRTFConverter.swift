@@ -21,6 +21,25 @@ struct MarkdownToRTFConverter {
             
             let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
             
+            let paragraphStyle = NSMutableParagraphStyle()
+            var indentLevel = 0
+            var tempLine = line
+            
+            while tempLine.hasPrefix("    ") {
+                indentLevel += 1
+                tempLine = String(tempLine.dropFirst(4))
+            }
+            while tempLine.hasPrefix("\t") {
+                indentLevel += 1
+                tempLine = String(tempLine.dropFirst(1))
+            }
+            
+            if indentLevel > 0 {
+                paragraphStyle.firstLineHeadIndent = CGFloat(indentLevel * 24)
+                paragraphStyle.headIndent = CGFloat(indentLevel * 24)
+                attributes[.paragraphStyle] = paragraphStyle
+            }
+            
             // 1. Parse Headings
             if trimmed.hasPrefix("### ") {
                 let text = String(trimmed.dropFirst(4))
@@ -46,6 +65,8 @@ struct MarkdownToRTFConverter {
             } else if trimmed.hasPrefix("- ") || trimmed.hasPrefix("* ") {
                 let text = String(trimmed.dropFirst(2))
                 processedLine = "•  " + text
+            } else if trimmed.range(of: "^\\d+\\.\\s", options: .regularExpression) != nil {
+                processedLine = trimmed
             }
             
             // 3. Clean up inline formatting tags to ensure clean presentation
