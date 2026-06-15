@@ -407,7 +407,6 @@ struct CreateTabView: View {
                     prompt: noteContent,
                     system: systemPrompt
                 )
-                
                 await MainActor.run {
                     blocks = NoteBlockParser.parse(desc: summary)
                     isSummarizing = false
