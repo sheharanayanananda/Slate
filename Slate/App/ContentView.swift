@@ -250,10 +250,9 @@ struct ContentView: View {
                 
                 try await Task.sleep(nanoseconds: 1_000_000_000)
                 
-                let rtfDesc = MarkdownToRTFConverter.convert(parsed.desc)
                 await MainActor.run {
                     isProcessing = false
-                    editingNote = SlateModel(title: parsed.title, desc: rtfDesc)
+                    editingNote = SlateModel(title: parsed.title, desc: parsed.desc)
                     activeTab = .create
                 }
             } catch {

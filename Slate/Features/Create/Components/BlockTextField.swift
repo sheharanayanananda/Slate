@@ -18,6 +18,106 @@ class CustomTextView: UITextView {
     }
 }
 
+struct KeyboardAccessoryToolbar: View {
+    var onToggleBold: () -> Void
+    var onToggleItalic: () -> Void
+    var onToggleStrikethrough: () -> Void
+    var onToggleChecklist: () -> Void
+    var onToggleBullet: () -> Void
+    var onToggleNumbered: () -> Void
+    var onDecreaseIndent: () -> Void
+    var onIncreaseIndent: () -> Void
+    var onDismissKeyboard: () -> Void
+    
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 12) {
+                // Group 1: Text Formatting (Bold, Italic, Strikethrough)
+                HStack(spacing: 0) {
+                    Button(action: onToggleBold) {
+                        Image(systemName: "bold")
+                            .font(.system(size: 14, weight: .semibold))
+                            .frame(width: 40, height: 32)
+                    }
+                    Divider()
+                        .frame(height: 16)
+                    Button(action: onToggleItalic) {
+                        Image(systemName: "italic")
+                            .font(.system(size: 14, weight: .semibold))
+                            .frame(width: 40, height: 32)
+                    }
+                    Divider()
+                        .frame(height: 16)
+                    Button(action: onToggleStrikethrough) {
+                        Image(systemName: "strikethrough")
+                            .font(.system(size: 14, weight: .semibold))
+                            .frame(width: 40, height: 32)
+                    }
+                }
+                .background(Color(.systemGray6))
+                .clipShape(Capsule())
+                
+                // Group 2: Lists (Checklist, Bullet, Numbered)
+                HStack(spacing: 0) {
+                    Button(action: onToggleChecklist) {
+                        Image(systemName: "checklist")
+                            .font(.system(size: 14, weight: .medium))
+                            .frame(width: 40, height: 32)
+                    }
+                    Divider()
+                        .frame(height: 16)
+                    Button(action: onToggleBullet) {
+                        Image(systemName: "list.bullet")
+                            .font(.system(size: 14, weight: .medium))
+                            .frame(width: 40, height: 32)
+                    }
+                    Divider()
+                        .frame(height: 16)
+                    Button(action: onToggleNumbered) {
+                        Image(systemName: "list.number")
+                            .font(.system(size: 14, weight: .medium))
+                            .frame(width: 40, height: 32)
+                    }
+                }
+                .background(Color(.systemGray6))
+                .clipShape(Capsule())
+                
+                // Group 3: Indentation
+                HStack(spacing: 0) {
+                    Button(action: onDecreaseIndent) {
+                        Image(systemName: "decrease.indent")
+                            .font(.system(size: 14, weight: .medium))
+                            .frame(width: 40, height: 32)
+                    }
+                    Divider()
+                        .frame(height: 16)
+                    Button(action: onIncreaseIndent) {
+                        Image(systemName: "increase.indent")
+                            .font(.system(size: 14, weight: .medium))
+                            .frame(width: 40, height: 32)
+                    }
+                }
+                .background(Color(.systemGray6))
+                .clipShape(Capsule())
+                
+                // Group 4: Keyboard Dismiss
+                Button(action: onDismissKeyboard) {
+                    Image(systemName: "keyboard.chevron.compact.down")
+                        .font(.system(size: 14, weight: .medium))
+                        .frame(width: 40, height: 32)
+                }
+                .background(Color(.systemGray6))
+                .clipShape(Circle())
+            }
+            .tint(.primary)
+            .padding(.horizontal, 16)
+            .frame(height: 44)
+        }
+        .background(Color.clear)
+        .frame(height: 44)
+    }
+}
+
 struct BlockTextField: UIViewRepresentable {
     @Binding var text: String
     var isFocused: Bool
@@ -44,6 +144,7 @@ struct BlockTextField: UIViewRepresentable {
     
     func makeUIView(context: Context) -> CustomTextView {
         let textView = CustomTextView()
+        context.coordinator.textView = textView
         textView.delegate = context.coordinator
         textView.onDeleteBackward = onDeleteBackward
         textView.backgroundColor = .clear
@@ -54,76 +155,38 @@ struct BlockTextField: UIViewRepresentable {
         textView.font = font
         textView.textColor = textColor
         
-        // Setup Keyboard Accessory View (Toolbar)
-        let toolbar = UIToolbar()
-        toolbar.sizeToFit()
-        
-        let formatButton = UIBarButtonItem(
-            image: UIImage(systemName: "textformat"),
-            style: .plain,
-            target: context.coordinator,
-            action: #selector(Coordinator.formatTapped)
+        // Setup Keyboard Accessory View using SwiftUI & UIHostingController
+        let accessoryView = KeyboardAccessoryToolbar(
+            onToggleBold: { context.coordinator.boldTapped() },
+            onToggleItalic: { context.coordinator.italicTapped() },
+            onToggleStrikethrough: { context.coordinator.strikethroughTapped() },
+            onToggleChecklist: {
+                onToggleChecklist?()
+            },
+            onToggleBullet: {
+                onToggleBullet?()
+            },
+            onToggleNumbered: {
+                onToggleNumbered?()
+            },
+            onDecreaseIndent: {
+                onDecreaseIndent?()
+            },
+            onIncreaseIndent: {
+                onIncreaseIndent?()
+            },
+            onDismissKeyboard: { [weak textView] in
+                textView?.resignFirstResponder()
+                onDismissKeyboard?()
+            }
         )
         
-        let checklistButton = UIBarButtonItem(
-            image: UIImage(systemName: "checklist"),
-            style: .plain,
-            target: context.coordinator,
-            action: #selector(Coordinator.checklistTapped)
-        )
+        let hostingController = UIHostingController(rootView: accessoryView)
+        hostingController.view.autoresizingMask = .flexibleWidth
+        hostingController.view.frame = CGRect(x: 0, y: 0, width: 320, height: 44)
+        hostingController.view.backgroundColor = .clear
         
-        let bulletButton = UIBarButtonItem(
-            image: UIImage(systemName: "list.bullet"),
-            style: .plain,
-            target: context.coordinator,
-            action: #selector(Coordinator.bulletTapped)
-        )
-        
-        let numberedButton = UIBarButtonItem(
-            image: UIImage(systemName: "list.number"),
-            style: .plain,
-            target: context.coordinator,
-            action: #selector(Coordinator.numberedTapped)
-        )
-        
-        let decreaseButton = UIBarButtonItem(
-            image: UIImage(systemName: "decrease.indent"),
-            style: .plain,
-            target: context.coordinator,
-            action: #selector(Coordinator.decreaseTapped)
-        )
-        
-        let increaseButton = UIBarButtonItem(
-            image: UIImage(systemName: "increase.indent"),
-            style: .plain,
-            target: context.coordinator,
-            action: #selector(Coordinator.increaseTapped)
-        )
-        
-        let spacer = UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil)
-        
-        let dismissButton = UIBarButtonItem(
-            image: UIImage(systemName: "keyboard.chevron.compact.down"),
-            style: .plain,
-            target: context.coordinator,
-            action: #selector(Coordinator.dismissTapped)
-        )
-        
-        toolbar.items = [
-            formatButton,
-            checklistButton,
-            bulletButton,
-            numberedButton,
-            decreaseButton,
-            increaseButton,
-            spacer,
-            dismissButton
-        ]
-        
-        toolbar.barTintColor = .systemBackground
-        toolbar.tintColor = .systemBlue
-        
-        textView.inputAccessoryView = toolbar
+        textView.inputAccessoryView = hostingController.view
         
         return textView
     }
@@ -246,6 +309,7 @@ struct BlockTextField: UIViewRepresentable {
     
     class Coordinator: NSObject, UITextViewDelegate {
         var parent: BlockTextField
+        weak var textView: CustomTextView?
         var lastText: String = ""
         var lastIsStrikethrough: Bool = false
         var lastFont: UIFont? = nil
@@ -257,6 +321,52 @@ struct BlockTextField: UIViewRepresentable {
         
         @objc func formatTapped() {
             parent.onToggleFormat?()
+        }
+        
+        @objc func boldTapped() {
+            applyInlineFormatting(wrapper: "**")
+        }
+        
+        @objc func italicTapped() {
+            applyInlineFormatting(wrapper: "*")
+        }
+        
+        @objc func strikethroughTapped() {
+            applyInlineFormatting(wrapper: "~~")
+        }
+        
+        private func applyInlineFormatting(wrapper: String) {
+            guard let textView = textView else { return }
+            let generator = UIImpactFeedbackGenerator(style: .light)
+            generator.impactOccurred()
+            
+            let range = textView.selectedRange
+            let text = textView.text as NSString
+            let selectedText = text.substring(with: range)
+            
+            let newSubstring: String
+            let isWrappingEmpty = selectedText.isEmpty
+            
+            if selectedText.hasPrefix(wrapper) && selectedText.hasSuffix(wrapper) {
+                newSubstring = String(selectedText.dropFirst(wrapper.count).dropLast(wrapper.count))
+            } else {
+                newSubstring = wrapper + selectedText + wrapper
+            }
+            
+            let newContent = text.replacingCharacters(in: range, with: newSubstring)
+            textView.text = newContent
+            self.textViewDidChange(textView)
+            
+            if isWrappingEmpty {
+                let newCursorLocation = range.location + wrapper.count
+                let newSelectedRange = NSRange(location: newCursorLocation, length: 0)
+                textView.selectedRange = newSelectedRange
+                parent.selectedRange = newSelectedRange
+            } else {
+                let newSelectedRange = NSRange(location: range.location, length: newSubstring.count)
+                textView.selectedRange = newSelectedRange
+                parent.selectedRange = newSelectedRange
+            }
         }
         
         @objc func checklistTapped() {

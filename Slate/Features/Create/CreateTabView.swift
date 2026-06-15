@@ -32,7 +32,7 @@ struct CreateTabView: View {
                 VStack(alignment: .leading, spacing: 14) {
                     // Note Title
                     TextField("Title", text: $title)
-                        .font(.system(size: 17, weight: .bold))
+                        .font(.system(size: 20, weight: .semibold))
                         .padding(.horizontal, 4)
                         .padding(.top, 12)
                     
@@ -60,24 +60,24 @@ struct CreateTabView: View {
                                     }
                                 }) {
                                     Image(systemName: block.isChecked ? "checkmark.circle.fill" : "circle")
-                                        .font(.system(size: 21, weight: .medium))
+                                        .font(.system(size: 20, weight: .medium))
                                         .foregroundColor(block.isChecked ? .blue : .secondary.opacity(0.6))
                                 }
                                 .buttonStyle(.plain)
-                                .padding(.top, 1)
+                                .frame(height: firstLineHeight(for: block.type), alignment: .center)
                             } else if block.type == .bullet {
                                 Image(systemName: "circle.fill")
                                     .font(.system(size: 6))
                                     .foregroundColor(.secondary)
-                                    .padding(.top, 9)
                                     .padding(.horizontal, 8)
+                                    .frame(height: firstLineHeight(for: block.type), alignment: .center)
                             } else if block.type == .numbered {
                                 let itemNumber = calculateNumberedIndex(at: index)
                                 Text("\(itemNumber).")
                                     .font(.system(size: 16, weight: .regular))
                                     .foregroundColor(.secondary)
                                     .frame(width: 20, alignment: .trailing)
-                                    .padding(.top, 2)
+                                    .frame(height: firstLineHeight(for: block.type), alignment: .center)
                             }
                             
                             BlockTextField(
@@ -109,6 +109,7 @@ struct CreateTabView: View {
                                 onToggleFormat: {
                                     let generator = UIImpactFeedbackGenerator(style: .light)
                                     generator.impactOccurred()
+                                    focusedBlockId = nil
                                     showFormattingSheet = true
                                 },
                                 onToggleChecklist: {
@@ -147,6 +148,10 @@ struct CreateTabView: View {
             if let note = newValue {
                 title = note.title
                 blocks = NoteBlockParser.parse(desc: note.desc)
+            } else {
+                title = ""
+                blocks = [NoteBlock(type: .paragraph, content: "")]
+                focusedBlockId = nil
             }
         }
         .navigationTitle(editingNote == nil ? "New Note" : "Edit Note")
@@ -175,58 +180,6 @@ struct CreateTabView: View {
                     saveNote()
                 }
                 .keyboardShortcut(.defaultAction)
-            }
-            
-            // Keyboard Accessory Toolbar
-            ToolbarItemGroup(placement: .keyboard) {
-                HStack(spacing: 20) {
-                    Button(action: {
-                        let generator = UIImpactFeedbackGenerator(style: .light)
-                        generator.impactOccurred()
-                        showFormattingSheet = true
-                    }) {
-                        Image(systemName: "textformat")
-                            .font(.system(size: 18, weight: .medium))
-                    }
-                    
-                    Button(action: {
-                        toggleBlockType(to: .checklist)
-                    }) {
-                        Image(systemName: "checklist")
-                    }
-                    
-                    Button(action: {
-                        toggleBlockType(to: .bullet)
-                    }) {
-                        Image(systemName: "list.bullet")
-                    }
-                    
-                    Button(action: {
-                        toggleBlockType(to: .numbered)
-                    }) {
-                        Image(systemName: "list.number")
-                    }
-                    
-                    Button(action: {
-                        changeIndent(by: -1)
-                    }) {
-                        Image(systemName: "decrease.indent")
-                    }
-                    
-                    Button(action: {
-                        changeIndent(by: 1)
-                    }) {
-                        Image(systemName: "increase.indent")
-                    }
-                    
-                    Spacer()
-                    
-                    Button(action: {
-                        focusedBlockId = nil
-                    }) {
-                        Image(systemName: "keyboard.chevron.compact.down")
-                    }
-                }
             }
         }
         .sheet(isPresented: $showFormattingSheet) {
@@ -267,6 +220,10 @@ struct CreateTabView: View {
     
     private func blockTextColor(for type: NoteBlock.BlockType) -> UIColor {
         return UIColor.label
+    }
+    
+    private func firstLineHeight(for type: NoteBlock.BlockType) -> CGFloat {
+        return blockFont(for: type).lineHeight
     }
     
     // MARK: - Block Editing Actions
@@ -395,16 +352,15 @@ struct CreateTabView: View {
         }
         
         let markdown = NoteBlockParser.serializeToMarkdown(blocks: blocks)
-        let rtfDesc = MarkdownToRTFConverter.convert(markdown)
         
         if let note = editingNote {
             note.title = trimmedTitle
-            note.desc = rtfDesc
+            note.desc = markdown
             if note.modelContext == nil {
                 context.insert(note)
             }
         } else {
-            let note = SlateModel(title: trimmedTitle, desc: rtfDesc)
+            let note = SlateModel(title: trimmedTitle, desc: markdown)
             context.insert(note)
         }
         
@@ -562,6 +518,8 @@ struct FormattingSheet: View {
             let selectedText = nsString.substring(with: range)
             
             let newSubstring: String
+            let isWrappingEmpty = selectedText.isEmpty
+            
             if selectedText.hasPrefix(wrapper) && selectedText.hasSuffix(wrapper) {
                 newSubstring = String(selectedText.dropFirst(wrapper.count).dropLast(wrapper.count))
             } else {
@@ -571,8 +529,11 @@ struct FormattingSheet: View {
             let newContent = nsString.replacingCharacters(in: range, with: newSubstring)
             blocks[idx].content = newContent
             
-            let newLength = newSubstring.count
-            selectedTextRange = NSRange(location: range.location, length: newLength)
+            if isWrappingEmpty {
+                selectedTextRange = NSRange(location: range.location + wrapper.count, length: 0)
+            } else {
+                selectedTextRange = NSRange(location: range.location, length: newSubstring.count)
+            }
         }) {
             Image(systemName: systemImage)
                 .font(.system(size: 16, weight: .medium))
