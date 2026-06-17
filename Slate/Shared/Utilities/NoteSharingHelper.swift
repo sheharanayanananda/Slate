@@ -10,35 +10,68 @@ import PDFKit
 
 struct NoteSharingHelper {
     
+    static func prepareForExport(_ attributedString: NSAttributedString, font: UIFont) -> NSAttributedString {
+        let result = NSMutableAttributedString(attributedString: attributedString)
+        let range = NSRange(location: 0, length: result.length)
+        
+        // Resolve dynamic colors using light mode trait collection to prevent invisible text in dark mode
+        result.enumerateAttribute(.foregroundColor, in: range, options: []) { value, subrange, _ in
+            if let color = value as? UIColor {
+                let lightColor = color.resolvedColor(with: UITraitCollection(userInterfaceStyle: .light))
+                result.removeAttribute(.foregroundColor, range: subrange)
+                result.addAttribute(.foregroundColor, value: lightColor, range: subrange)
+            } else {
+                result.addAttribute(.foregroundColor, value: UIColor.black, range: subrange)
+            }
+        }
+        
+        result.enumerateAttribute(.attachment, in: range, options: []) { value, subrange, _ in
+            if let customAttachment = value as? CheckboxAttachment {
+                let config = UIImage.SymbolConfiguration(font: font)
+                let systemName = customAttachment.isChecked ? "checkmark.circle.fill" : "circle"
+                let rawColor = customAttachment.isChecked ? UIColor.systemBlue : UIColor.tertiaryLabel
+                let color = rawColor.resolvedColor(with: UITraitCollection(userInterfaceStyle: .light))
+                if let rawImage = UIImage(systemName: systemName, withConfiguration: config)?.withTintColor(color, renderingMode: .alwaysOriginal) {
+                    let standardAttachment = NSTextAttachment()
+                    standardAttachment.image = rawImage
+                    
+                    let size = font.lineHeight
+                    let yOffset = (font.capHeight - size) / 2
+                    standardAttachment.bounds = CGRect(x: 0, y: yOffset, width: size, height: size)
+                    
+                    result.removeAttribute(.attachment, range: subrange)
+                    result.addAttribute(.attachment, value: standardAttachment, range: subrange)
+                }
+            }
+        }
+        
+        return result
+    }
+    
     static func generateRichText(for note: SlateModel) -> NSAttributedString {
-        let titleAttributes: [NSAttributedString.Key: Any] = [
-            .font: UIFont.systemFont(ofSize: 24, weight: .bold)
-        ]
-        
-        let attributedString = NSMutableAttributedString(string: note.title + "\n\n", attributes: titleAttributes)
-        
-        // Append the actual parsed rich text
-        attributedString.append(note.attributedDesc)
-        
-        return attributedString
+        let font = UIFont.preferredFont(forTextStyle: .body)
+        let baseAttr = NativeTextView.parseToAttributed(text: note.desc, font: font)
+        return prepareForExport(baseAttr, font: font)
     }
     
     static func generateMarkdownText(for note: SlateModel) -> String {
-        return "*\(note.title)*\n\n\(note.previewText)"
+        return note.desc
     }
     
     static func generatePDF(for note: SlateModel) -> URL? {
         let content = generateRichText(for: note)
         
-        let pdfRenderer = UIGraphicsPDFRenderer(bounds: CGRect(x: 0, y: 0, width: 612, height: 792)) // Standard US Letter size
+        // A4 page boundaries: 595 x 842 points
+        let pdfRenderer = UIGraphicsPDFRenderer(bounds: CGRect(x: 0, y: 0, width: 595, height: 842))
         
-        let fileURL = FileManager.default.temporaryDirectory.appendingPathComponent("\(note.title).pdf")
+        let cleanTitle = note.title.isEmpty ? "New Note" : note.title
+        let fileURL = FileManager.default.temporaryDirectory.appendingPathComponent("\(cleanTitle).pdf")
         
         do {
             try pdfRenderer.writePDF(to: fileURL) { context in
                 context.beginPage()
-                
-                content.draw(in: CGRect(x: 20, y: 20, width: 572, height: 752))
+                // Use 24pt margins on A4: 595 - 48 = 547 width, 842 - 48 = 794 height
+                content.draw(in: CGRect(x: 24, y: 24, width: 547, height: 794))
             }
             return fileURL
         } catch {
@@ -48,11 +81,11 @@ struct NoteSharingHelper {
     }
     
     static func generateTextFile(for note: SlateModel) -> URL? {
-        let text = "\(note.title)\n\n\(note.previewText)"
-        let fileURL = FileManager.default.temporaryDirectory.appendingPathComponent("\(note.title).txt")
+        let cleanTitle = note.title.isEmpty ? "New Note" : note.title
+        let fileURL = FileManager.default.temporaryDirectory.appendingPathComponent("\(cleanTitle).txt")
         
         do {
-            try text.write(to: fileURL, atomically: true, encoding: .utf8)
+            try note.desc.write(to: fileURL, atomically: true, encoding: .utf8)
             return fileURL
         } catch {
             print("Could not create text file: \(error)")

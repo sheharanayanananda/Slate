@@ -24,6 +24,12 @@ struct CreateTabView: View {
     @State private var animationTask: Task<Void, Never>? = nil
     @State private var isAnimatingText: Bool = false
     
+    // Sharing States
+    @State private var showShareOptions = false
+    @State private var showShareSheet = false
+    @State private var shareItems: [Any] = []
+    @State private var tempNoteToShare: SlateModel?
+    
     private var typedLinesCount: Int {
         if text.isEmpty { return 0 }
         return text.components(separatedBy: "\n").count
@@ -34,6 +40,7 @@ struct CreateTabView: View {
             ZStack(alignment: .topLeading) {
                 if isLenseProcessing || isAnimatingText || isOrganizing {
                     SkeletonView(typedLinesCount: typedLinesCount)
+                        .transition(.opacity)
                 }
                 
                 NativeTextView(text: $text)
@@ -61,7 +68,7 @@ struct CreateTabView: View {
                 animateTextLineByLine(newValue)
             }
         }
-        .navigationTitle(editingNote == nil ? "New Note" : "Edit Note")
+        .navigationTitle((editingNote == nil || editingNote?.modelContext == nil) ? "New Note" : "Edit Note")
         .toolbarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
@@ -71,14 +78,23 @@ struct CreateTabView: View {
             }
                         
             ToolbarItem(placement: .primaryAction) {
-                if isOrganizing {
-                    ProgressView()
-                } else {
-                    Button {
-                        organizeNoteWithAI()
-                    } label: {
-                        Label("Organize with AI", systemImage: "sparkles")
+                HStack(spacing: 16) {
+                    if isOrganizing {
+                        ProgressView()
+                    } else {
+                        Button {
+                            organizeNoteWithAI()
+                        } label: {
+                            Label("Organize with AI", systemImage: "sparkles")
+                        }
                     }
+                    
+                    Button {
+                        shareNote()
+                    } label: {
+                        Label("Share", systemImage: "square.and.arrow.up")
+                    }
+                    .disabled(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
             }
             
@@ -98,6 +114,33 @@ struct CreateTabView: View {
             Button("OK", role: .cancel) { }
         } message: {
             Text(errorMessage ?? "An unknown error occurred.")
+        }
+        .confirmationDialog("Share Slate", isPresented: $showShareOptions, titleVisibility: .visible) {
+            Button("Share Richtext") {
+                if let note = tempNoteToShare {
+                    let itemSource = NoteItemSource(note: note)
+                    shareItems = [itemSource]
+                    showShareSheet = true
+                }
+            }
+            
+            Button("Save as PDF") {
+                if let note = tempNoteToShare, let pdfURL = NoteSharingHelper.generatePDF(for: note) {
+                    shareItems = [pdfURL]
+                    showShareSheet = true
+                }
+            }
+            
+            Button("Save as Text") {
+                if let note = tempNoteToShare, let textURL = NoteSharingHelper.generateTextFile(for: note) {
+                    shareItems = [textURL]
+                    showShareSheet = true
+                }
+            }
+        }
+        .sheet(isPresented: $showShareSheet) {
+            ShareSheet(activityItems: shareItems)
+                .presentationDetents([.medium, .large])
         }
     }
     
@@ -215,8 +258,10 @@ struct CreateTabView: View {
             return
         }
         
-        isOrganizing = true
-        text = "" // Clear text immediately to display the skeleton loader
+        withAnimation(.easeInOut(duration: 0.3)) {
+            isOrganizing = true
+            text = "" // Clear text immediately to display the skeleton loader
+        }
         
         Task {
             do {
@@ -230,21 +275,27 @@ struct CreateTabView: View {
                     .trimmingCharacters(in: .whitespacesAndNewlines)
                 if !cleanedText.isEmpty {
                     await MainActor.run {
-                        isOrganizing = false
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            isOrganizing = false
+                        }
                         animateTextLineByLine(cleanedText)
                     }
                 } else {
                     await MainActor.run {
-                        text = trimmedDesc
-                        isOrganizing = false
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            text = trimmedDesc
+                            isOrganizing = false
+                        }
                     }
                 }
             } catch {
                 await MainActor.run {
-                    text = trimmedDesc
+                    withAnimation(.easeInOut(duration: 0.3)) {
+                        text = trimmedDesc
+                        isOrganizing = false
+                    }
                     errorMessage = error.localizedDescription
                     showErrorAlert = true
-                    isOrganizing = false
                 }
             }
         }
@@ -264,10 +315,34 @@ struct CreateTabView: View {
         animationTask?.cancel()
     }
     
+    private func shareNote() {
+        guard let note = prepareNoteForSharing() else { return }
+        tempNoteToShare = note
+        showShareOptions = true
+    }
+    
+    private func prepareNoteForSharing() -> SlateModel? {
+        let trimmedDesc = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmedDesc.isEmpty { return nil }
+        
+        let initialTitle = generateInitialTitle(from: trimmedDesc)
+        if let note = editingNote {
+            note.desc = trimmedDesc
+            if note.title.isEmpty || note.title == "New Note" {
+                note.title = initialTitle
+            }
+            return note
+        } else {
+            return SlateModel(title: initialTitle, desc: trimmedDesc)
+        }
+    }
+    
     private func animateTextLineByLine(_ fullText: String) {
         animationTask?.cancel()
         text = ""
-        isAnimatingText = true
+        withAnimation(.easeInOut(duration: 0.3)) {
+            isAnimatingText = true
+        }
         
         let lines = fullText.components(separatedBy: "\n")
         
@@ -290,7 +365,9 @@ struct CreateTabView: View {
                 try? await Task.sleep(nanoseconds: 220_000_000) // 220ms per line
             }
             
-            isAnimatingText = false
+            withAnimation(.easeInOut(duration: 0.3)) {
+                isAnimatingText = false
+            }
             lenseResultText = ""
         }
     }
@@ -299,7 +376,9 @@ struct CreateTabView: View {
 struct SkeletonLine: View {
     @State private var phase: CGFloat = 0
     @State private var pulse = false
+    @State private var opacity: Double = 0.0
     let width: CGFloat
+    let delay: Double
     
     var body: some View {
         RoundedRectangle(cornerRadius: 6)
@@ -323,11 +402,15 @@ struct SkeletonLine: View {
                 }
             )
             .clipShape(RoundedRectangle(cornerRadius: 6))
+            .opacity(opacity)
             .onAppear {
-                withAnimation(Animation.linear(duration: 1.8).repeatForever(autoreverses: false)) {
+                withAnimation(.easeOut(duration: 0.45).delay(delay)) {
+                    opacity = 1.0
+                }
+                withAnimation(Animation.linear(duration: 1.8).repeatForever(autoreverses: false).delay(delay)) {
                     phase = 1.0
                 }
-                withAnimation(Animation.easeInOut(duration: 1.2).repeatForever(autoreverses: true)) {
+                withAnimation(Animation.easeInOut(duration: 1.2).repeatForever(autoreverses: true).delay(delay)) {
                     pulse = true
                 }
             }
@@ -336,6 +419,7 @@ struct SkeletonLine: View {
 
 struct SkeletonView: View {
     let typedLinesCount: Int
+    @State private var appearanceOpacity: Double = 0.0
     
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -345,7 +429,7 @@ struct SkeletonView: View {
             
             ForEach(0..<widths.count, id: \.self) { index in
                 if index >= typedLinesCount {
-                    SkeletonLine(width: widths[index])
+                    SkeletonLine(width: widths[index], delay: Double(index) * 0.035)
                         .transition(.opacity)
                 } else {
                     Color.clear
@@ -355,5 +439,11 @@ struct SkeletonView: View {
         }
         .padding(.horizontal, 24)
         .padding(.top, 16)
+        .opacity(appearanceOpacity)
+        .onAppear {
+            withAnimation(.easeInOut(duration: 0.4)) {
+                appearanceOpacity = 1.0
+            }
+        }
     }
 }

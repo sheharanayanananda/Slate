@@ -80,7 +80,7 @@ struct ContentView: View {
                         }
                     }
                     
-                    Tab(editingNote == nil ? "New" : "Edit", systemImage: "plus", value: .create) {
+                    Tab((editingNote == nil || editingNote?.modelContext == nil) ? "New" : "Edit", systemImage: "plus", value: .create) {
                         NavigationStack {
                             CreateTabView(
                                 editingNote: $editingNote,
@@ -174,14 +174,16 @@ struct ContentView: View {
     
     // Background Processing: Vision Extraction (OCR & Classification) and Ollama API Request
     private func processScannedImage(_ image: UIImage) {
-        isProcessing = true
-        processState = .analyzing
-        processStatus = "Extracting details..."
-        
-        // Immediately navigate to the Create tab and reset editing state
-        activeTab = .create
-        editingNote = nil
-        lenseResultText = ""
+        withAnimation(.easeInOut(duration: 0.3)) {
+            isProcessing = true
+            processState = .analyzing
+            processStatus = "Extracting details..."
+            
+            // Immediately navigate to the Create tab and reset editing state
+            activeTab = .create
+            editingNote = nil
+            lenseResultText = ""
+        }
         
         Task {
             // Run native OCR and classification in parallel on the device
@@ -248,17 +250,21 @@ struct ContentView: View {
                 try await Task.sleep(nanoseconds: 300_000_000)
                 
                 await MainActor.run {
-                    isProcessing = false
-                    editingNote = SlateModel(title: parsed.title, desc: "")
-                    lenseResultText = parsed.desc
+                    withAnimation(.easeInOut(duration: 0.3)) {
+                        isProcessing = false
+                        editingNote = SlateModel(title: parsed.title, desc: "")
+                        lenseResultText = parsed.desc
+                    }
                 }
             } catch {
                 await MainActor.run {
-                    processState = .failed
-                    processStatus = "Failed to analyze"
+                    withAnimation(.easeInOut(duration: 0.3)) {
+                        processState = .failed
+                        processStatus = "Failed to analyze"
+                        isProcessing = false
+                    }
                     errorMessage = error.localizedDescription
                     showErrorAlert = true
-                    isProcessing = false
                 }
                 print("Failed to process scanned image: \(error)")
             }
