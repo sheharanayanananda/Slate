@@ -66,7 +66,7 @@ final class OllamaClient {
             ]
         ]
         
-        if let image = image, let jpegData = image.jpegData(compressionQuality: 0.9) {
+        if let image = image, let jpegData = image.jpegData(compressionQuality: 0.75) {
             body["images"] = [jpegData.base64EncodedString()]
             body["thinking"] = "low"
         }

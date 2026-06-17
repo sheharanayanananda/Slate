@@ -4,34 +4,52 @@ Slate is a modern, intuitive, and intelligent notes application built exclusivel
 
 ---
 
-## Features
+## Core Features
 
-### Rich Text & Markdown Editing
-- **Interactive Editor**: Write and style notes with bold, italic, underline, and color attributes using a custom-bridged rich text editor.
-- **Dual Support**: Seamlessly parses and stores standard Rich Text Format (RTF) data encoded in Base64 (prefixed with "rtf:"), while offering automatic fallback parsing for standard Markdown notes.
+### Rich Text & Markdown Editor
+* **Custom Text Editor**
+  Allows full styling of notes (bold, italic, underline, custom fonts, and colors) through a custom bridged text view.
+* **Interactive Checklists**
+  Converts standard Markdown checkbox syntax (`- [ ]` and `- [x]`) into interactive checkbox attachments. Users can tap directly on checkboxes in the note editor to toggle task completion.
+* **Dual Format Encoding**
+  Saves styled notes as Base64-encoded Rich Text Format (RTF) strings (prefixed with `rtf:`) while maintaining fallback parsing for standard inline Markdown.
 
-### SwiftData Persistence
-- Fast, reliable, and native local database persistence using Apple's modern SwiftData framework.
-- Chronological automatic sorting of slates, with responsive list views and swipe-to-delete.
+### AI-Powered Note Organization
+* **Smart Structure Utility**
+  A toolbar button powered by Gemma 3 (27B) that restructures rough or messy notes, improves text layout, resolves spelling/grammar errors, and automatically formats action plans into checklists.
+* **Context-Aware Animations**
+  * *Pulsing Skeleton Loader*: Replaces the editing canvas with a breathing visual wireframe placeholder during model request processing.
+  * *Typewriter Animation*: Fades in completed AI notes line-by-line for a smooth visual transition.
 
-### Versatile Note Sharing & PDF Export
-- Swiping right on any note launches a share sheet offering three export formats:
-  - **Rich Text (RTF)**: Automatically formatted RTF source shared directly to Messages, Mail, or native Apple Notes.
-  - **PDF Document**: On-the-fly rendering of note titles and styled content into standard US Letter PDF documents using PDFKit and UIGraphicsPDFRenderer.
-  - **Plain Text**: Clean export as a standard .txt file.
+### Local Data Persistence
+* **Native SwiftData Integration**
+  Uses Apple's modern SwiftData framework for fast, transactional local storage.
+* **Automatic Sorting**
+  Keeps slates sorted chronologically with intuitive swipe-to-delete gesture integration.
 
-### Smart Lense (AI Visual Intelligence)
-- Capture any photo using the in-app camera interface.
-- Send the visual context to an Ollama-compatible endpoint powered by the Gemma 3 (27B) model ("gemma3:27b-cloud").
-- The AI deduces the implicit intent behind the image (such as noting low inventory from a photo of a food item, suggesting a repair for a broken device, or extracting receipts) and auto-generates a structured Markdown note containing:
-  - Descriptive title and category tags
-  - Executive summary of the situation
-  - List of key observations/details
-  - Actionable next steps and searchable hashtags
+### Sharing and Export Formats
+* **Rich Text (RTF)**
+  Exports fully formatted text documents to Messages, Mail, or native Apple Notes, keeping checklist selections intact.
+* **Dynamic PDF Export**
+  Generates standard US Letter size PDF documents on the fly with titles, formatted body text, and checklist status details using PDFKit.
+* **Plain Text Export**
+  Compiles and saves notes to clean `.txt` files.
 
-### Advanced Tools (Roadmap)
-- **Transcript**: Audio-to-text conversion (Coming Soon)
-- **Summarize**: Interactive long-form summarization (Coming Soon)
+### Smart Lens (Visual AI Assistant)
+* **On-Device Preprocessing**
+  Runs Vision APIs on captured images (OCR text recognition and object classification) to extract raw data before calling the cloud LLM.
+* **Image Optimization**
+  Resizes image assets and aligns orientations on-device to minimize payload size and latency.
+* **Note Synthesis**
+  Combines recognized text and labeled objects to generate contextual notes with summaries, bullet points, tags, and action items.
+* **Visual Scene Fallback**
+  If the target has no text (e.g., photos of objects or rooms), the AI synthesizes notes based on the classified visual contents.
+
+### Product Roadmap
+* **Transcribe**
+  High-fidelity audio recording and transcription (Coming Soon)
+* **Summarize**
+  Interactive long-form note summarization (Coming Soon)
 
 ---
 
@@ -58,8 +76,8 @@ Slate/
 │   │   ├── CreateTabView.swift # Note creation/editing interface
 │   │   └── RichTextEditor.swift# Custom UIViewRepresentable UITextView for RTF editing
 │   ├── Intelligence/
-│   │   ├── IntelligenceTabView.swift # Visual tools menu (Smart Lense, Transcript, etc.)
-│   │   └── Components/         # Sheets for Smart Lense, Summarize, Transcript, and CameraView
+│   │   ├── IntelligenceTabView.swift # Visual tools menu (Smart Lens, Transcript, etc.)
+│   │   └── Components/         # Sheets for Smart Lens, Summarize, Transcript, and CameraView
 │   └── Settings/
 │       └── SettingsTabView.swift # Settings panel displaying app info and theme assets
 └── Shared/
@@ -74,7 +92,7 @@ Slate/
 
 - **Xcode 15.0** or later
 - **iOS 17.0** or later (required for SwiftData and modern SwiftUI APIs)
-- A device or simulator with camera permissions enabled (for Smart Lense)
+- A device or simulator with camera permissions enabled (for Smart Lens)
 - Active internet connection (for cloud-based Ollama features)
 
 ---

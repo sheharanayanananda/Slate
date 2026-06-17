@@ -8,6 +8,7 @@
 import SwiftUI
 import SwiftData
 import Vision
+import ImageIO
 
 struct ContentView: View {
 
@@ -32,7 +33,7 @@ struct ContentView: View {
     @State private var processState: ProcessState = .analyzing
     @State private var errorMessage: String? = nil
     @State private var showErrorAlert = false
-    @State private var lenseResultText = ""
+    @State private var lensResultText = ""
 
     enum ProcessState {
         case analyzing
@@ -85,9 +86,9 @@ struct ContentView: View {
                             CreateTabView(
                                 editingNote: $editingNote,
                                 activeTab: $activeTab,
-                                isLenseProcessing: $isProcessing,
-                                lenseStatus: $processStatus,
-                                lenseResultText: $lenseResultText
+                                isLensProcessing: $isProcessing,
+                                lensStatus: $processStatus,
+                                lensResultText: $lensResultText
                             )
                         }
                     }
@@ -182,7 +183,7 @@ struct ContentView: View {
             // Immediately navigate to the Create tab and reset editing state
             activeTab = .create
             editingNote = nil
-            lenseResultText = ""
+            lensResultText = ""
         }
         
         Task {
@@ -235,11 +236,12 @@ struct ContentView: View {
                   `**Total:** $12.34`
                   `  - Item 1: $10.00`
                   `  - Taxes: $2.34`
-                - **OCR Quality**: Fix any clear typos or reading errors introduced by the raw OCR, and make sure the result is coherent.
+                - **Low/No-OCR Scenario**: If the "OCR Extracted Text" is empty or contains only a few characters, focus your response on describing the detected objects/scenes from "Detected Objects/Scenes" and any visual information you can extract from the image itself. Synthesize a note summarizing the photo's subject, context, and potential next steps or observations based on the visual contents.
                 """
                 
                 let userPrompt = "Analyze this image and synthesize a clean note."
-                let response = try await client.generate(prompt: userPrompt, system: systemPrompt, image: image)
+                let optimizedImage = image.resized(toMaxDimension: 1024)
+                let response = try await client.generate(prompt: userPrompt, system: systemPrompt, image: optimizedImage)
                 let parsed = parseResponse(response)
                 
                 await MainActor.run {
@@ -253,7 +255,7 @@ struct ContentView: View {
                     withAnimation(.easeInOut(duration: 0.3)) {
                         isProcessing = false
                         editingNote = SlateModel(title: parsed.title, desc: "")
-                        lenseResultText = parsed.desc
+                        lensResultText = parsed.desc
                     }
                 }
             } catch {
@@ -273,7 +275,8 @@ struct ContentView: View {
     
     private func performOCR(on image: UIImage) async -> String {
         guard let cgImage = image.cgImage else { return "" }
-        let requestHandler = VNImageRequestHandler(cgImage: cgImage, options: [:])
+        let orientation = CGImagePropertyOrientation(image.imageOrientation)
+        let requestHandler = VNImageRequestHandler(cgImage: cgImage, orientation: orientation, options: [:])
         
         return await withCheckedContinuation { continuation in
             let request = VNRecognizeTextRequest { request, error in
@@ -297,7 +300,8 @@ struct ContentView: View {
     
     private func performClassification(on image: UIImage) async -> String {
         guard let cgImage = image.cgImage else { return "" }
-        let requestHandler = VNImageRequestHandler(cgImage: cgImage, options: [:])
+        let orientation = CGImagePropertyOrientation(image.imageOrientation)
+        let requestHandler = VNImageRequestHandler(cgImage: cgImage, orientation: orientation, options: [:])
         
         return await withCheckedContinuation { continuation in
             let request = VNClassifyImageRequest { request, error in
@@ -379,4 +383,44 @@ struct ContentView: View {
 
 #Preview {
     ContentView()
+}
+
+extension UIImage {
+    func resized(toMaxDimension maxDimension: CGFloat) -> UIImage {
+        let size = self.size
+        let widthRatio  = maxDimension / size.width
+        let heightRatio = maxDimension / size.height
+        
+        // Only scale down if the image is larger than the maxDimension
+        guard widthRatio < 1.0 || heightRatio < 1.0 else {
+            return self
+        }
+        
+        let ratio = min(widthRatio, heightRatio)
+        let newSize = CGSize(width: size.width * ratio, height: size.height * ratio)
+        
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1.0 // Ensure scale is 1.0 to get exact pixel dimensions
+        
+        let renderer = UIGraphicsImageRenderer(size: newSize, format: format)
+        return renderer.image { _ in
+            self.draw(in: CGRect(origin: .zero, size: newSize))
+        }
+    }
+}
+
+extension CGImagePropertyOrientation {
+    init(_ orientation: UIImage.Orientation) {
+        switch orientation {
+        case .up: self = .up
+        case .upMirrored: self = .upMirrored
+        case .down: self = .down
+        case .downMirrored: self = .downMirrored
+        case .left: self = .left
+        case .leftMirrored: self = .leftMirrored
+        case .right: self = .right
+        case .rightMirrored: self = .rightMirrored
+        @unknown default: self = .up
+        }
+    }
 }

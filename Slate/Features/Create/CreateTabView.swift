@@ -11,9 +11,9 @@ struct CreateTabView: View {
     
     @Binding var editingNote: SlateModel?
     @Binding var activeTab: ContentView.TabIdentifier
-    @Binding var isLenseProcessing: Bool
-    @Binding var lenseStatus: String
-    @Binding var lenseResultText: String
+    @Binding var isLensProcessing: Bool
+    @Binding var lensStatus: String
+    @Binding var lensResultText: String
 
     @Environment(\.modelContext) private var context
     @State private var showEmptyWarning: Bool = false
@@ -23,12 +23,9 @@ struct CreateTabView: View {
     @State private var wasTitlePreGenerated: Bool = false
     @State private var animationTask: Task<Void, Never>? = nil
     @State private var isAnimatingText: Bool = false
+    @State private var skeletonSessionID = UUID()
     
-    // Sharing States
-    @State private var showShareOptions = false
-    @State private var showShareSheet = false
-    @State private var shareItems: [Any] = []
-    @State private var tempNoteToShare: SlateModel?
+
     
     private var typedLinesCount: Int {
         if text.isEmpty { return 0 }
@@ -38,8 +35,9 @@ struct CreateTabView: View {
     var body: some View {
         VStack(spacing: 0) {
             ZStack(alignment: .topLeading) {
-                if isLenseProcessing || isAnimatingText || isOrganizing {
+                if isLensProcessing || isAnimatingText || isOrganizing {
                     SkeletonView(typedLinesCount: typedLinesCount)
+                        .id(skeletonSessionID)
                         .transition(.opacity)
                 }
                 
@@ -63,9 +61,14 @@ struct CreateTabView: View {
                 wasTitlePreGenerated = false
             }
         }
-        .onChange(of: lenseResultText) { _, newValue in
+        .onChange(of: lensResultText) { _, newValue in
             if !newValue.isEmpty {
                 animateTextLineByLine(newValue)
+            }
+        }
+        .onChange(of: isLensProcessing) { _, newValue in
+            if newValue {
+                skeletonSessionID = UUID()
             }
         }
         .navigationTitle((editingNote == nil || editingNote?.modelContext == nil) ? "New Note" : "Edit Note")
@@ -75,26 +78,19 @@ struct CreateTabView: View {
                 Button("Cancel", systemImage: "xmark", role: .cancel) {
                     cancel()
                 }
+                .disabled(isOrganizing)
             }
                         
             ToolbarItem(placement: .primaryAction) {
-                HStack(spacing: 16) {
-                    if isOrganizing {
-                        ProgressView()
-                    } else {
-                        Button {
-                            organizeNoteWithAI()
-                        } label: {
-                            Label("Organize with AI", systemImage: "sparkles")
-                        }
-                    }
-                    
+                if isOrganizing {
+                    ProgressView()
+                } else {
                     Button {
-                        shareNote()
+                        organizeNoteWithAI()
                     } label: {
-                        Label("Share", systemImage: "square.and.arrow.up")
+                        Label("Organize with AI", systemImage: "sparkles")
                     }
-                    .disabled(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    .disabled(isAnimatingText || text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
             }
             
@@ -103,6 +99,7 @@ struct CreateTabView: View {
                     saveNote()
                 }
                 .keyboardShortcut(.defaultAction)
+                .disabled(isAnimatingText || isOrganizing || text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             }
         }
         .alert("Empty Note", isPresented: $showEmptyWarning) {
@@ -110,38 +107,12 @@ struct CreateTabView: View {
         } message: {
             Text("Can't save an empty note.")
         }
-        .alert("AI Organizer Error", isPresented: $showErrorAlert) {
+        .alert("Organizer Error", isPresented: $showErrorAlert) {
             Button("OK", role: .cancel) { }
         } message: {
             Text(errorMessage ?? "An unknown error occurred.")
         }
-        .confirmationDialog("Share Slate", isPresented: $showShareOptions, titleVisibility: .visible) {
-            Button("Share Richtext") {
-                if let note = tempNoteToShare {
-                    let itemSource = NoteItemSource(note: note)
-                    shareItems = [itemSource]
-                    showShareSheet = true
-                }
-            }
-            
-            Button("Save as PDF") {
-                if let note = tempNoteToShare, let pdfURL = NoteSharingHelper.generatePDF(for: note) {
-                    shareItems = [pdfURL]
-                    showShareSheet = true
-                }
-            }
-            
-            Button("Save as Text") {
-                if let note = tempNoteToShare, let textURL = NoteSharingHelper.generateTextFile(for: note) {
-                    shareItems = [textURL]
-                    showShareSheet = true
-                }
-            }
-        }
-        .sheet(isPresented: $showShareSheet) {
-            ShareSheet(activityItems: shareItems)
-                .presentationDetents([.medium, .large])
-        }
+
     }
     
     private func saveNote() {
@@ -258,8 +229,11 @@ struct CreateTabView: View {
             return
         }
         
+        animationTask?.cancel()
+        skeletonSessionID = UUID()
         withAnimation(.easeInOut(duration: 0.3)) {
             isOrganizing = true
+            isAnimatingText = false
             text = "" // Clear text immediately to display the skeleton loader
         }
         
@@ -270,9 +244,7 @@ struct CreateTabView: View {
                     prompt: trimmedDesc,
                     system: aiSystemPrompt
                 )
-                let cleanedText = organizedText
-                    .replacingOccurrences(of: "\r", with: "")
-                    .trimmingCharacters(in: .whitespacesAndNewlines)
+                let cleanedText = sanitizeMarkdown(organizedText)
                 if !cleanedText.isEmpty {
                     await MainActor.run {
                         withAnimation(.easeInOut(duration: 0.3)) {
@@ -309,32 +281,36 @@ struct CreateTabView: View {
     private func reset() {
         text = ""
         editingNote = nil
-        isLenseProcessing = false
+        isLensProcessing = false
         isAnimatingText = false
-        lenseResultText = ""
+        lensResultText = ""
         animationTask?.cancel()
     }
     
-    private func shareNote() {
-        guard let note = prepareNoteForSharing() else { return }
-        tempNoteToShare = note
-        showShareOptions = true
-    }
+
     
-    private func prepareNoteForSharing() -> SlateModel? {
-        let trimmedDesc = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        if trimmedDesc.isEmpty { return nil }
+    private func sanitizeMarkdown(_ response: String) -> String {
+        var textToParse = response
+            .replacingOccurrences(of: "\r", with: "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
         
-        let initialTitle = generateInitialTitle(from: trimmedDesc)
-        if let note = editingNote {
-            note.desc = trimmedDesc
-            if note.title.isEmpty || note.title == "New Note" {
-                note.title = initialTitle
+        // Strip markdown code block wrapping if present
+        if let blockRange = textToParse.range(of: "```markdown") {
+            let afterBlock = textToParse[blockRange.upperBound...]
+            if let endBlockRange = afterBlock.range(of: "```") {
+                textToParse = String(afterBlock[..<endBlockRange.lowerBound]).trimmingCharacters(in: .whitespacesAndNewlines)
+            } else {
+                textToParse = String(afterBlock).trimmingCharacters(in: .whitespacesAndNewlines)
             }
-            return note
-        } else {
-            return SlateModel(title: initialTitle, desc: trimmedDesc)
+        } else if let blockRange = textToParse.range(of: "```") {
+            let afterBlock = textToParse[blockRange.upperBound...]
+            if let endBlockRange = afterBlock.range(of: "```") {
+                textToParse = String(afterBlock[..<endBlockRange.lowerBound]).trimmingCharacters(in: .whitespacesAndNewlines)
+            } else {
+                textToParse = String(afterBlock).trimmingCharacters(in: .whitespacesAndNewlines)
+            }
         }
+        return textToParse
     }
     
     private func animateTextLineByLine(_ fullText: String) {
@@ -368,52 +344,56 @@ struct CreateTabView: View {
             withAnimation(.easeInOut(duration: 0.3)) {
                 isAnimatingText = false
             }
-            lenseResultText = ""
+            lensResultText = ""
         }
     }
 }
 
 struct SkeletonLine: View {
-    @State private var phase: CGFloat = 0
-    @State private var pulse = false
-    @State private var opacity: Double = 0.0
     let width: CGFloat
     let delay: Double
+    @State private var entranceOpacity: Double = 0.0
     
     var body: some View {
-        RoundedRectangle(cornerRadius: 6)
-            .fill(Color.primary.opacity(pulse ? 0.04 : 0.08))
-            .frame(width: width, height: 16)
-            .overlay(
-                GeometryReader { geo in
-                    let size = geo.size
-                    LinearGradient(
-                        gradient: Gradient(colors: [
-                            .clear, 
-                            Color.primary.opacity(0.12), 
-                            Color.primary.opacity(0.04), 
-                            .clear
-                        ]),
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    )
-                    .frame(width: size.width / 1.2)
-                    .offset(x: -size.width + (size.width * 2) * phase)
+        TimelineView(.animation) { timelineContext in
+            let date = timelineContext.date
+            let timeInterval = date.timeIntervalSinceReferenceDate
+            
+            // Calculate phase from 0 to 1 based on time
+            let phase = CGFloat((timeInterval).truncatingRemainder(dividingBy: 1.8) / 1.8)
+            
+            // Calculate pulse (breathing effect) from 0 to 1 using a sine wave
+            let pulseFactor = CGFloat((sin(timeInterval * .pi / 0.6) + 1.0) / 2.0) // loops every 1.2s
+            let fillOpacity = 0.04 + (0.04 * pulseFactor) // ranges from 0.04 to 0.08
+            
+            RoundedRectangle(cornerRadius: 6)
+                .fill(Color.primary.opacity(fillOpacity))
+                .frame(width: width, height: 16)
+                .overlay(
+                    GeometryReader { geo in
+                        let size = geo.size
+                        LinearGradient(
+                            gradient: Gradient(colors: [
+                                .clear, 
+                                Color.primary.opacity(0.12), 
+                                Color.primary.opacity(0.04), 
+                                .clear
+                            ]),
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                        .frame(width: size.width / 1.2)
+                        .offset(x: -size.width + (size.width * 2) * phase)
+                    }
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 6))
+                .opacity(entranceOpacity)
+                .onAppear {
+                    withAnimation(.easeOut(duration: 0.45).delay(delay)) {
+                        entranceOpacity = 1.0
+                    }
                 }
-            )
-            .clipShape(RoundedRectangle(cornerRadius: 6))
-            .opacity(opacity)
-            .onAppear {
-                withAnimation(.easeOut(duration: 0.45).delay(delay)) {
-                    opacity = 1.0
-                }
-                withAnimation(Animation.linear(duration: 1.8).repeatForever(autoreverses: false).delay(delay)) {
-                    phase = 1.0
-                }
-                withAnimation(Animation.easeInOut(duration: 1.2).repeatForever(autoreverses: true).delay(delay)) {
-                    pulse = true
-                }
-            }
+        }
     }
 }
 
