@@ -71,7 +71,7 @@ class CheckboxAttachment: NSTextAttachment {
             font = UIFont.preferredFont(forTextStyle: .body)
         }
         
-        let config = UIImage.SymbolConfiguration(font: font.withSize(font.pointSize * 1.15))
+        let config = UIImage.SymbolConfiguration(font: font)
         let systemName = isChecked ? "checkmark.circle.fill" : "circle"
         let color = isChecked ? UIColor.systemBlue : UIColor.tertiaryLabel
         return UIImage(systemName: systemName, withConfiguration: config)?.withTintColor(color, renderingMode: .alwaysOriginal)
@@ -91,7 +91,7 @@ class CheckboxAttachment: NSTextAttachment {
             font = UIFont.preferredFont(forTextStyle: .body)
         }
         
-        let size = font.lineHeight * 1.15
+        let size = font.lineHeight
         let yOffset = (font.capHeight - size) / 2
         return CGRect(x: 0, y: yOffset, width: size, height: size)
     }
@@ -203,9 +203,43 @@ struct NativeKeyboardToolbar: View {
             .background(Color(.systemGray6))
             .clipShape(Circle())
         }
-        .padding(.horizontal, 12)
+        .padding(.horizontal, 10)
         .padding(.vertical, 8)
         .background(Color.clear)
+    }
+}
+
+class SlateTextView: UITextView {
+    override func caretRect(for position: UITextPosition) -> CGRect {
+        var rect = super.caretRect(for: position)
+        
+        let offset = self.offset(from: self.beginningOfDocument, to: position)
+        let font: UIFont
+        
+        if offset > 0 && offset <= self.attributedText.length {
+            var range = NSRange(location: 0, length: 0)
+            if let f = self.attributedText.attribute(.font, at: offset - 1, effectiveRange: &range) as? UIFont {
+                font = f
+            } else {
+                font = self.font ?? UIFont.preferredFont(forTextStyle: .body)
+            }
+        } else if offset == 0 && self.attributedText.length > 0 {
+            var range = NSRange(location: 0, length: 0)
+            if let f = self.attributedText.attribute(.font, at: 0, effectiveRange: &range) as? UIFont {
+                font = f
+            } else {
+                font = self.font ?? UIFont.preferredFont(forTextStyle: .body)
+            }
+        } else {
+            font = self.font ?? UIFont.preferredFont(forTextStyle: .body)
+        }
+        
+        let targetHeight = font.lineHeight
+        if rect.size.height > targetHeight {
+            rect.size.height = targetHeight
+        }
+        
+        return rect
     }
 }
 
@@ -213,7 +247,7 @@ struct NativeTextView: UIViewRepresentable {
     @Binding var text: String
     
     func makeUIView(context: Context) -> UITextView {
-        let textView = UITextView()
+        let textView = SlateTextView()
         textView.delegate = context.coordinator
         context.coordinator.textView = textView
         
@@ -282,18 +316,17 @@ struct NativeTextView: UIViewRepresentable {
     
     func updateUIView(_ uiView: UITextView, context: Context) {
         if context.coordinator.lastParsedText != text && !context.coordinator.isUpdating {
-            let font = uiView.font ?? UIFont.preferredFont(forTextStyle: .body)
+            let font = UIFont.preferredFont(forTextStyle: .body)
             let attr = NativeTextView.parseToAttributed(text: text, font: font)
             
             let selectedRange = uiView.selectedRange
             uiView.attributedText = attr
             
-            if text.isEmpty {
-                uiView.typingAttributes = [
-                    .font: font,
-                    .foregroundColor: UIColor.label
-                ]
-            }
+            uiView.font = font
+            uiView.typingAttributes = [
+                .font: font,
+                .foregroundColor: UIColor.label
+            ]
             
             let length = uiView.attributedText.length
             if selectedRange.location <= length {
@@ -405,7 +438,8 @@ struct NativeTextView: UIViewRepresentable {
     
     static func parseToAttributed(text: String, font: UIFont) -> NSAttributedString {
         let result = NSMutableAttributedString()
-        let lines = text.components(separatedBy: "\n")
+        let sanitizedText = text.replacingOccurrences(of: "\r", with: "")
+        let lines = sanitizedText.components(separatedBy: "\n")
         
         for (index, line) in lines.enumerated() {
             let level = getIndentLevel(from: line)
@@ -431,11 +465,6 @@ struct NativeTextView: UIViewRepresentable {
             normalParagraphStyle.headIndent = indentOffset
             normalParagraphStyle.firstLineHeadIndent = indentOffset
             normalParagraphStyle.paragraphSpacing = 8
-            
-            let checklistAttributes: [NSAttributedString.Key: Any] = [.paragraphStyle: checklistParagraphStyle]
-            let bulletAttributes: [NSAttributedString.Key: Any] = [.paragraphStyle: bulletParagraphStyle]
-            let numberedAttributes: [NSAttributedString.Key: Any] = [.paragraphStyle: numberedParagraphStyle]
-            let normalAttributes: [NSAttributedString.Key: Any] = [.paragraphStyle: normalParagraphStyle]
             
             if strippedLine.hasPrefix("- [ ] ") {
                 let attachment = CheckboxAttachment(isChecked: false)

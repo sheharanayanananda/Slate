@@ -248,7 +248,7 @@ struct ContentView: View {
                 
                 ### Intelligence & Context Guidelines:
                 - **Contextual Formatting**: Intelligently detect the intent behind the scan (e.g. shopping list, todo list, recipe, business card, textbook info, receipt).
-                - **Shopping/Todo Lists**: If the scanned image contains lists of items to buy, tasks to perform, or actions, structure them as checkbox items: `- [ ] Item`.
+                - **Shopping/Todo Lists**: If the scanned image contains lists of items to buy, tasks to perform, or actions, structure them as checkbox items: `- [ ] Item`. Do NOT apply bolding (`**`) or any other inline styling to the checkbox items; keep the item text as plain text.
                 - **Recipes/Processes**: If the scanned image describes step-by-step instructions or procedures, format them as numbered lists: `1. Step`.
                 - **Receipts/Financials**: Organize receipt data into key-value descriptions using bold and underline rather than tables, for example:
                   `**Merchant:** Store Name`
@@ -338,7 +338,9 @@ struct ContentView: View {
     }
     
     private func parseResponse(_ response: String) -> (title: String, desc: String) {
-        var textToParse = response.trimmingCharacters(in: .whitespacesAndNewlines)
+        var textToParse = response
+            .replacingOccurrences(of: "\r", with: "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
         
         // Find content inside ```markdown ... ``` or ``` ... ```
         if let blockRange = textToParse.range(of: "```markdown") {

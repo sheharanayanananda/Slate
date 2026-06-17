@@ -138,7 +138,9 @@ struct CreateTabView: View {
                 prompt: content,
                 system: systemPrompt
             )
-            let trimmedTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
+            let trimmedTitle = title
+                .replacingOccurrences(of: "\r", with: "")
+                .trimmingCharacters(in: .whitespacesAndNewlines)
             if !trimmedTitle.isEmpty {
                 await MainActor.run {
                     note.title = trimmedTitle
@@ -192,7 +194,9 @@ struct CreateTabView: View {
                     prompt: trimmedDesc,
                     system: aiSystemPrompt
                 )
-                let cleanedText = organizedText.trimmingCharacters(in: .whitespacesAndNewlines)
+                let cleanedText = organizedText
+                    .replacingOccurrences(of: "\r", with: "")
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
                 if !cleanedText.isEmpty {
                     await MainActor.run {
                         text = cleanedText

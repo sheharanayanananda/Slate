@@ -57,8 +57,7 @@ struct SlateTabView: View {
                                 Text(note.created_at.formatted(date: .abbreviated, time: .shortened))
                                   .font(.caption)
                             }
-                            Text(note.previewText)
-                              .font(.system(size: 12))
+                            Text(AttributedString(NativeTextView.parseToAttributed(text: note.desc, font: .systemFont(ofSize: 12))))
                               .lineLimit(3)
                               .lineHeight(.loose)
                         }
