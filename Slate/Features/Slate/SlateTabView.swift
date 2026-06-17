@@ -59,7 +59,7 @@ struct SlateTabView: View {
                             }
                             Text(note.previewText)
                               .font(.system(size: 12))
-                              .lineLimit(4)
+                              .lineLimit(3)
                               .lineHeight(.loose)
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)

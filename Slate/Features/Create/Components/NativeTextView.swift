@@ -24,7 +24,7 @@ extension UIFont {
         var traits = fontDescriptor.symbolicTraits
         traits.insert(.traitBold)
         if let descriptor = fontDescriptor.withSymbolicTraits(traits) {
-            return UIFont(descriptor: descriptor, size: 0)
+            return UIFont(descriptor: descriptor, size: pointSize)
         }
         return self
     }
@@ -33,7 +33,7 @@ extension UIFont {
         var traits = fontDescriptor.symbolicTraits
         traits.insert(.traitItalic)
         if let descriptor = fontDescriptor.withSymbolicTraits(traits) {
-            return UIFont(descriptor: descriptor, size: 0)
+            return UIFont(descriptor: descriptor, size: pointSize)
         }
         return self
     }
@@ -443,7 +443,10 @@ struct NativeTextView: UIViewRepresentable {
                 let contentText = String(strippedLine.dropFirst(6))
                 let contentAttr = parseInlineMarkdown(" " + contentText, font: font)
                 attrString.append(contentAttr)
-                attrString.addAttributes(checklistAttributes, range: NSRange(location: 0, length: attrString.length))
+                
+                attrString.addAttribute(.paragraphStyle, value: checklistParagraphStyle, range: NSRange(location: 0, length: attrString.length))
+                attrString.addAttributes([.font: font, .foregroundColor: UIColor.label], range: NSRange(location: 0, length: 2))
+                
                 result.append(attrString)
             } else if strippedLine.hasPrefix("- [x] ") {
                 let attachment = CheckboxAttachment(isChecked: true)
@@ -457,14 +460,20 @@ struct NativeTextView: UIViewRepresentable {
                 mutableContent.addAttribute(.foregroundColor, value: UIColor.secondaryLabel, range: textRange)
                 
                 attrString.append(mutableContent)
-                attrString.addAttributes(checklistAttributes, range: NSRange(location: 0, length: attrString.length))
+                
+                attrString.addAttribute(.paragraphStyle, value: checklistParagraphStyle, range: NSRange(location: 0, length: attrString.length))
+                attrString.addAttributes([.font: font, .foregroundColor: UIColor.label], range: NSRange(location: 0, length: 2))
+                
                 result.append(attrString)
             } else if strippedLine.hasPrefix("- ") || strippedLine.hasPrefix("• ") {
                 let contentText = String(strippedLine.dropFirst(2))
                 let contentAttr = parseInlineMarkdown(contentText, font: font)
                 let attrString = NSMutableAttributedString(string: "• ")
                 attrString.append(contentAttr)
-                attrString.addAttributes(bulletAttributes, range: NSRange(location: 0, length: attrString.length))
+                
+                attrString.addAttribute(.paragraphStyle, value: bulletParagraphStyle, range: NSRange(location: 0, length: attrString.length))
+                attrString.addAttributes([.font: font, .foregroundColor: UIColor.label], range: NSRange(location: 0, length: 2))
+                
                 result.append(attrString)
             } else if let numberMatch = strippedLine.range(of: #"^\d+\.\s"#, options: .regularExpression) {
                 let prefix = String(strippedLine[numberMatch])
@@ -472,18 +481,29 @@ struct NativeTextView: UIViewRepresentable {
                 let contentAttr = parseInlineMarkdown(contentText, font: font)
                 let attrString = NSMutableAttributedString(string: prefix)
                 attrString.append(contentAttr)
-                attrString.addAttributes(numberedAttributes, range: NSRange(location: 0, length: attrString.length))
+                
+                attrString.addAttribute(.paragraphStyle, value: numberedParagraphStyle, range: NSRange(location: 0, length: attrString.length))
+                attrString.addAttributes([.font: font, .foregroundColor: UIColor.label], range: NSRange(location: 0, length: prefix.count))
+                
                 result.append(attrString)
             } else {
                 let contentAttr = parseInlineMarkdown(strippedLine, font: font)
                 let attrString = NSMutableAttributedString(attributedString: contentAttr)
-                attrString.addAttributes(normalAttributes, range: NSRange(location: 0, length: attrString.length))
+                
+                attrString.addAttribute(.paragraphStyle, value: normalParagraphStyle, range: NSRange(location: 0, length: attrString.length))
+                
                 result.append(attrString)
             }
             
             if index < lines.count - 1 {
                 let isList = strippedLine.hasPrefix("- [ ] ") || strippedLine.hasPrefix("- [x] ") || strippedLine.hasPrefix("- ") || strippedLine.hasPrefix("• ") || strippedLine.range(of: #"^\d+\.\s"#, options: .regularExpression) != nil
-                let newlineAttrs = isList ? (strippedLine.hasPrefix("- ") || strippedLine.hasPrefix("• ") ? bulletAttributes : (strippedLine.range(of: #"^\d+\.\s"#, options: .regularExpression) != nil ? numberedAttributes : checklistAttributes)) : normalAttributes
+                let newlineParagraphStyle = isList ? (strippedLine.hasPrefix("- ") || strippedLine.hasPrefix("• ") ? bulletParagraphStyle : (strippedLine.range(of: #"^\d+\.\s"#, options: .regularExpression) != nil ? numberedParagraphStyle : checklistParagraphStyle)) : normalParagraphStyle
+                
+                let newlineAttrs: [NSAttributedString.Key: Any] = [
+                    .paragraphStyle: newlineParagraphStyle,
+                    .font: font,
+                    .foregroundColor: UIColor.label
+                ]
                 result.append(NSAttributedString(string: "\n", attributes: newlineAttrs))
             }
         }
@@ -961,7 +981,7 @@ struct NativeTextView: UIViewRepresentable {
                     }
                     
                     if let descriptor = currentFont.fontDescriptor.withSymbolicTraits(traits) {
-                        let newFont = UIFont(descriptor: descriptor, size: 0)
+                        let newFont = UIFont(descriptor: descriptor, size: currentFont.pointSize)
                         attrString.addAttribute(.font, value: newFont, range: range)
                     }
                 }
@@ -986,7 +1006,7 @@ struct NativeTextView: UIViewRepresentable {
                 }
                 
                 if let descriptor = currentFont.fontDescriptor.withSymbolicTraits(traits) {
-                    let newFont = UIFont(descriptor: descriptor, size: 0)
+                    let newFont = UIFont(descriptor: descriptor, size: currentFont.pointSize)
                     currentAttrs[.font] = newFont
                     textView.typingAttributes = currentAttrs
                 }

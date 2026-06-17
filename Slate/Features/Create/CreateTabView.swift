@@ -17,6 +17,7 @@ struct CreateTabView: View {
     @State private var isOrganizing: Bool = false
     @State private var errorMessage: String? = nil
     @State private var showErrorAlert: Bool = false
+    @State private var wasTitlePreGenerated: Bool = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -25,13 +26,18 @@ struct CreateTabView: View {
         .onAppear {
             if let note = editingNote {
                 text = note.desc
+                wasTitlePreGenerated = !note.title.isEmpty && note.title != "New Note"
+            } else {
+                wasTitlePreGenerated = false
             }
         }
         .onChange(of: editingNote) { _, newValue in
             if let note = newValue {
                 text = note.desc
+                wasTitlePreGenerated = !note.title.isEmpty && note.title != "New Note"
             } else {
                 text = ""
+                wasTitlePreGenerated = false
             }
         }
         .navigationTitle(editingNote == nil ? "New Note" : "Edit Note")
@@ -105,8 +111,10 @@ struct CreateTabView: View {
         // Actually, updating the object on the main thread is safer. 
         // The background generation will yield a string, and we'll update targetNote on MainActor.
         
-        Task {
-            await generateTitleInBackground(for: targetNote, content: trimmedDesc)
+        if !wasTitlePreGenerated {
+            Task {
+                await generateTitleInBackground(for: targetNote, content: trimmedDesc)
+            }
         }
         
         reset()
