@@ -32,7 +32,7 @@ struct CreateTabView: View {
     var body: some View {
         VStack(spacing: 0) {
             ZStack(alignment: .topLeading) {
-                if isLenseProcessing || isAnimatingText {
+                if isLenseProcessing || isAnimatingText || isOrganizing {
                     SkeletonView(typedLinesCount: typedLinesCount)
                 }
                 
@@ -216,6 +216,7 @@ struct CreateTabView: View {
         }
         
         isOrganizing = true
+        text = "" // Clear text immediately to display the skeleton loader
         
         Task {
             do {
@@ -229,17 +230,22 @@ struct CreateTabView: View {
                     .trimmingCharacters(in: .whitespacesAndNewlines)
                 if !cleanedText.isEmpty {
                     await MainActor.run {
+                        isOrganizing = false
                         animateTextLineByLine(cleanedText)
+                    }
+                } else {
+                    await MainActor.run {
+                        text = trimmedDesc
+                        isOrganizing = false
                     }
                 }
             } catch {
                 await MainActor.run {
+                    text = trimmedDesc
                     errorMessage = error.localizedDescription
                     showErrorAlert = true
+                    isOrganizing = false
                 }
-            }
-            await MainActor.run {
-                isOrganizing = false
             }
         }
     }
@@ -333,7 +339,9 @@ struct SkeletonView: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            let widths: [CGFloat] = [140, 300, 260, 280, 120, 240, 270, 180]
+            let widths: [CGFloat] = [
+                140, 300, 260, 280, 120, 240, 270, 180, 290, 250, 270, 190, 150
+            ]
             
             ForEach(0..<widths.count, id: \.self) { index in
                 if index >= typedLinesCount {
