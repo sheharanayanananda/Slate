@@ -13,12 +13,14 @@ final class SlateModel: Identifiable {
     @Attribute(.unique) var id: String
     var title: String
     var desc: String
+    var rtfData: Data?
     var created_at: Date
 
-    init(id: String = UUID().uuidString, title: String, desc: String, created_at: Date = .now) {
+    init(id: String = UUID().uuidString, title: String, desc: String, rtfData: Data? = nil, created_at: Date = .now) {
         self.id = id
         self.title = title
         self.desc = desc
+        self.rtfData = rtfData
         self.created_at = created_at
     }
 }
@@ -27,6 +29,10 @@ import UIKit
 
 extension SlateModel {
     var attributedDesc: NSAttributedString {
+        if let rtfData = rtfData, let attrStr = try? NSAttributedString(data: rtfData, options: [.documentType: NSAttributedString.DocumentType.rtfd], documentAttributes: nil) {
+            return attrStr
+        }
+        
         let mdOptions = AttributedString.MarkdownParsingOptions(interpretedSyntax: .inlineOnlyPreservingWhitespace)
         if let attrStr = try? AttributedString(markdown: desc, options: mdOptions) {
             return NSAttributedString(attrStr)
