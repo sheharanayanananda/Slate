@@ -16,7 +16,7 @@
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "27"
             endingLineNumber = "27"
-            landmarkName = "init(showSettings:onOpenSettings:onCreate:onSelect:onSmartLens:onTranscript:)"
+            landmarkName = "init(showSettings:onOpenSettings:onCreate:onSelect:onSmartLens:onTranscribe:)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>

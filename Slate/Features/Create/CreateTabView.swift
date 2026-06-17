@@ -14,6 +14,9 @@ struct CreateTabView: View {
 
     @Environment(\.modelContext) private var context
     @State private var showEmptyWarning: Bool = false
+    @State private var isOrganizing: Bool = false
+    @State private var errorMessage: String? = nil
+    @State private var showErrorAlert: Bool = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -40,6 +43,18 @@ struct CreateTabView: View {
                 }
             }
                         
+            ToolbarItem(placement: .primaryAction) {
+                if isOrganizing {
+                    ProgressView()
+                } else {
+                    Button {
+                        organizeNoteWithAI()
+                    } label: {
+                        Label("Organize with AI", systemImage: "sparkles")
+                    }
+                }
+            }
+            
             ToolbarItem(placement: .confirmationAction) {
                 Button("Save", systemImage: "checkmark", role: .confirm) {
                     saveNote()
@@ -51,6 +66,11 @@ struct CreateTabView: View {
             Button("OK", role: .cancel) { }
         } message: {
             Text("Can't save an empty note.")
+        }
+        .alert("AI Organizer Error", isPresented: $showErrorAlert) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(errorMessage ?? "An unknown error occurred.")
         }
     }
     
@@ -118,6 +138,67 @@ struct CreateTabView: View {
             }
         } catch {
             print("Failed to generate title in background: \(error.localizedDescription)")
+        }
+    }
+    
+    private var aiSystemPrompt: String {
+        """
+        You are an expert note organizer. Your task is to analyze the content and context of the provided note and reorganize/summarize it to make it highly readable, clear, structured, and easy to use.
+        
+        CRITICAL: You must only use the following Markdown formatting features supported by our editor:
+        1. Checklists: `- [ ] Item` (use for todos, tasks, shopping items, checklists)
+        2. Bullet points: `- Item` (use for lists, details, brainstorms)
+        3. Numbered lists: `1. Item` (use for sequences, steps, recipes)
+        4. Indentation: Prepend 2 spaces per indentation level for nested lists or sub-points (e.g. `  - Sub-item` or `  - [ ] Sub-task`)
+        5. Inline formatting:
+           - Bold: `**text**`
+           - Italic: `*text*`
+           - Underline: `<u>text</u>`
+           - Strikethrough: `~~text~~`
+        
+        Guidelines:
+        - Automatically identify the context (e.g., shopping list, todo tasks, meeting notes, recipe, study notes).
+        - If the content is a cluttered list of items to buy, structure it as a clean checklist: `- [ ] Item`.
+        - If it describes a step-by-step process or recipe, format the steps as a numbered list.
+        - Use bolding, underlining, or bullets to highlight key headings or topics.
+        - Do not use standard Markdown headers like `#` or `##`, code blocks, blockquotes, or hyperlinks.
+        
+        Output ONLY the organized and formatted note content. Do not include any introduction, conversational replies, quotes, or explanations.
+        """
+    }
+    
+    private func organizeNoteWithAI() {
+        let trimmedDesc = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmedDesc.isEmpty {
+            errorMessage = "Can't organize an empty note."
+            showErrorAlert = true
+            return
+        }
+        
+        isOrganizing = true
+        
+        Task {
+            do {
+                let client = OllamaClient()
+                let organizedText = try await client.generate(
+                    prompt: trimmedDesc,
+                    system: aiSystemPrompt
+                )
+                let cleanedText = organizedText.trimmingCharacters(in: .whitespacesAndNewlines)
+                if !cleanedText.isEmpty {
+                    await MainActor.run {
+                        text = cleanedText
+                    }
+                }
+            } catch {
+                await MainActor.run {
+                    errorMessage = error.localizedDescription
+                    showErrorAlert = true
+                }
+            }
+            await MainActor.run {
+                isOrganizing = false
+            }
         }
     }
     

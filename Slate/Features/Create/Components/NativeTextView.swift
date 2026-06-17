@@ -71,7 +71,7 @@ class CheckboxAttachment: NSTextAttachment {
             font = UIFont.preferredFont(forTextStyle: .body)
         }
         
-        let config = UIImage.SymbolConfiguration(font: font)
+        let config = UIImage.SymbolConfiguration(font: font.withSize(font.pointSize * 1.15))
         let systemName = isChecked ? "checkmark.circle.fill" : "circle"
         let color = isChecked ? UIColor.systemBlue : UIColor.tertiaryLabel
         return UIImage(systemName: systemName, withConfiguration: config)?.withTintColor(color, renderingMode: .alwaysOriginal)
@@ -91,7 +91,7 @@ class CheckboxAttachment: NSTextAttachment {
             font = UIFont.preferredFont(forTextStyle: .body)
         }
         
-        let size = font.lineHeight * 0.95
+        let size = font.lineHeight * 1.15
         let yOffset = (font.capHeight - size) / 2
         return CGRect(x: 0, y: yOffset, width: size, height: size)
     }
@@ -219,8 +219,14 @@ struct NativeTextView: UIViewRepresentable {
         
         textView.backgroundColor = .clear
         textView.isScrollEnabled = true
-        textView.font = UIFont.preferredFont(forTextStyle: .body)
+        
+        let bodyFont = UIFont.preferredFont(forTextStyle: .body)
+        textView.font = bodyFont
         textView.textColor = UIColor.label
+        textView.typingAttributes = [
+            .font: bodyFont,
+            .foregroundColor: UIColor.label
+        ]
         
         // Match native notes text container inset with 24pt side margins to align with toolbar
         textView.textContainerInset = UIEdgeInsets(top: 16, left: 24, bottom: 16, right: 24)
@@ -281,6 +287,13 @@ struct NativeTextView: UIViewRepresentable {
             
             let selectedRange = uiView.selectedRange
             uiView.attributedText = attr
+            
+            if text.isEmpty {
+                uiView.typingAttributes = [
+                    .font: font,
+                    .foregroundColor: UIColor.label
+                ]
+            }
             
             let length = uiView.attributedText.length
             if selectedRange.location <= length {
@@ -695,35 +708,35 @@ struct NativeTextView: UIViewRepresentable {
                     ? textView.textStorage.attribute(NSAttributedString.Key.attachment, at: lineRange.location, effectiveRange: &range)
                     : nil
                 
-                if let currentAttachment = firstCharAttr as? CheckboxAttachment {
-                    let isChecked = !currentAttachment.isChecked
-                    let newAttachment = CheckboxAttachment(isChecked: isChecked)
-                    
-                    let attrString = NSMutableAttributedString(attributedString: textView.attributedText)
-                    attrString.removeAttribute(.attachment, range: NSRange(location: lineRange.location, length: 1))
-                    attrString.addAttribute(.attachment, value: newAttachment, range: NSRange(location: lineRange.location, length: 1))
-                    
-                    let nsString = attrString.string as NSString
-                    let actualLineRange = nsString.lineRange(for: NSRange(location: lineRange.location, length: 1))
-                    
-                    if actualLineRange.length > 2 {
-                        let textRange = NSRange(location: lineRange.location + 2, length: actualLineRange.length - 2)
-                        if textRange.location + textRange.length <= attrString.length {
-                            if isChecked {
-                                attrString.addAttribute(.strikethroughStyle, value: NSUnderlineStyle.single.rawValue, range: textRange)
-                                attrString.addAttribute(.foregroundColor, value: UIColor.secondaryLabel, range: textRange)
-                            } else {
-                                attrString.removeAttribute(.strikethroughStyle, range: textRange)
-                                attrString.addAttribute(.foregroundColor, value: UIColor.label, range: textRange)
-                            }
-                        }
-                    }
-                    
+                if firstCharAttr is CheckboxAttachment {
                     isUpdating = true
-                    textView.attributedText = attrString
-                    textView.selectedRange = selectedRange
+                    let mutableAttr = NSMutableAttributedString(attributedString: textView.attributedText)
                     
-                    let newText = NativeTextView.serializeToString(attributed: attrString)
+                    let removeRange = NSRange(location: lineRange.location, length: min(2, lineRange.length))
+                    mutableAttr.replaceCharacters(in: removeRange, with: "")
+                    
+                    let font = textView.font ?? UIFont.preferredFont(forTextStyle: .body)
+                    let normalParagraphStyle = NSMutableParagraphStyle()
+                    normalParagraphStyle.paragraphSpacing = 8
+                    
+                    let normalAttrs: [NSAttributedString.Key: Any] = [
+                        .font: font,
+                        .foregroundColor: UIColor.label,
+                        .paragraphStyle: normalParagraphStyle
+                    ]
+                    
+                    let nsString = mutableAttr.string as NSString
+                    let newLineRange = nsString.lineRange(for: NSRange(location: lineRange.location, length: 0))
+                    
+                    mutableAttr.addAttributes(normalAttrs, range: newLineRange)
+                    mutableAttr.removeAttribute(.strikethroughStyle, range: newLineRange)
+                    
+                    textView.attributedText = mutableAttr
+                    
+                    let newLocation = max(lineRange.location, safeRange.location - removeRange.length)
+                    textView.selectedRange = NSRange(location: newLocation, length: safeRange.length)
+                    
+                    let newText = NativeTextView.serializeToString(attributed: mutableAttr)
                     self.lastParsedText = newText
                     parent.text = newText
                     isUpdating = false
@@ -1112,6 +1125,13 @@ struct NativeTextView: UIViewRepresentable {
         
         func textViewDidChange(_ textView: UITextView) {
             if isUpdating { return }
+            if textView.text.isEmpty {
+                let defaultFont = UIFont.preferredFont(forTextStyle: .body)
+                textView.typingAttributes = [
+                    .font: defaultFont,
+                    .foregroundColor: UIColor.label
+                ]
+            }
             let newText = NativeTextView.serializeToString(attributed: textView.attributedText)
             self.lastParsedText = newText
             parent.text = newText
