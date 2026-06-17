@@ -32,6 +32,7 @@ struct ContentView: View {
     @State private var processState: ProcessState = .analyzing
     @State private var errorMessage: String? = nil
     @State private var showErrorAlert = false
+    @State private var lenseResultText = ""
 
     enum ProcessState {
         case analyzing
@@ -81,7 +82,13 @@ struct ContentView: View {
                     
                     Tab(editingNote == nil ? "New" : "Edit", systemImage: "plus", value: .create) {
                         NavigationStack {
-                            CreateTabView(editingNote: $editingNote, activeTab: $activeTab)
+                            CreateTabView(
+                                editingNote: $editingNote,
+                                activeTab: $activeTab,
+                                isLenseProcessing: $isProcessing,
+                                lenseStatus: $processStatus,
+                                lenseResultText: $lenseResultText
+                            )
                         }
                     }
                     
@@ -99,40 +106,6 @@ struct ContentView: View {
                     ToolSheet(type: tool, editingNote: $editingNote, activeTab: $activeTab)
                 }
 
-                // Processing Loader Overlay
-                if isProcessing {
-                    ZStack {
-                        Color.black.opacity(0.3).ignoresSafeArea()
-                        
-                        VStack(spacing: 16) {
-                            if processState == .completed {
-                                Image(systemName: "checkmark.circle.fill")
-                                    .font(.system(size: 40))
-                                    .foregroundColor(.green)
-                            } else {
-                                ProgressView()
-                                    .controlSize(.large)
-                            }
-                            Text(processStatus)
-                                .font(.headline)
-                                .foregroundColor(.primary)
-                        }
-                        .padding(24)
-                        .background(
-                            ZStack {
-                                RoundedRectangle(cornerRadius: 30, style: .continuous)
-                                    .fill(.clear)
-                                    .glassEffect(Glass.clear.tint(.clear), in: .rect(cornerRadius: 30))
-
-                                RoundedRectangle(cornerRadius: 30, style: .continuous)
-                                    .stroke(Color.primary.opacity(0.12), lineWidth: 1)
-                            }
-                        )
-                        .shadow(color: Color.black.opacity(0.15), radius: 20, x: 0, y: 10)
-                    }
-                    .transition(.opacity)
-                    .zIndex(2)
-                }
 
                 if isSettingsVisible {
                     NavigationStack {
@@ -205,6 +178,11 @@ struct ContentView: View {
         processState = .analyzing
         processStatus = "Extracting details..."
         
+        // Immediately navigate to the Create tab and reset editing state
+        activeTab = .create
+        editingNote = nil
+        lenseResultText = ""
+        
         Task {
             // Run native OCR and classification in parallel on the device
             async let ocrText = performOCR(on: image)
@@ -214,7 +192,7 @@ struct ContentView: View {
             let resolvedClassifications = await classifications
             
             await MainActor.run {
-                processStatus = "Analyzing Content"
+                processStatus = "Analyzing Content..."
             }
             
             do {
@@ -267,12 +245,12 @@ struct ContentView: View {
                     processStatus = "Note Created"
                 }
                 
-                try await Task.sleep(nanoseconds: 1_000_000_000)
+                try await Task.sleep(nanoseconds: 300_000_000)
                 
                 await MainActor.run {
                     isProcessing = false
-                    editingNote = SlateModel(title: parsed.title, desc: parsed.desc)
-                    activeTab = .create
+                    editingNote = SlateModel(title: parsed.title, desc: "")
+                    lenseResultText = parsed.desc
                 }
             } catch {
                 await MainActor.run {

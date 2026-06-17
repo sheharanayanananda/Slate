@@ -11,6 +11,9 @@ struct CreateTabView: View {
     
     @Binding var editingNote: SlateModel?
     @Binding var activeTab: ContentView.TabIdentifier
+    @Binding var isLenseProcessing: Bool
+    @Binding var lenseStatus: String
+    @Binding var lenseResultText: String
 
     @Environment(\.modelContext) private var context
     @State private var showEmptyWarning: Bool = false
@@ -18,10 +21,23 @@ struct CreateTabView: View {
     @State private var errorMessage: String? = nil
     @State private var showErrorAlert: Bool = false
     @State private var wasTitlePreGenerated: Bool = false
+    @State private var animationTask: Task<Void, Never>? = nil
+    @State private var isAnimatingText: Bool = false
+    
+    private var typedLinesCount: Int {
+        if text.isEmpty { return 0 }
+        return text.components(separatedBy: "\n").count
+    }
 
     var body: some View {
         VStack(spacing: 0) {
-            NativeTextView(text: $text)
+            ZStack(alignment: .topLeading) {
+                if isLenseProcessing || isAnimatingText {
+                    SkeletonView(typedLinesCount: typedLinesCount)
+                }
+                
+                NativeTextView(text: $text)
+            }
         }
         .onAppear {
             if let note = editingNote {
@@ -38,6 +54,11 @@ struct CreateTabView: View {
             } else {
                 text = ""
                 wasTitlePreGenerated = false
+            }
+        }
+        .onChange(of: lenseResultText) { _, newValue in
+            if !newValue.isEmpty {
+                animateTextLineByLine(newValue)
             }
         }
         .navigationTitle(editingNote == nil ? "New Note" : "Edit Note")
@@ -208,7 +229,7 @@ struct CreateTabView: View {
                     .trimmingCharacters(in: .whitespacesAndNewlines)
                 if !cleanedText.isEmpty {
                     await MainActor.run {
-                        text = cleanedText
+                        animateTextLineByLine(cleanedText)
                     }
                 }
             } catch {
@@ -231,5 +252,100 @@ struct CreateTabView: View {
     private func reset() {
         text = ""
         editingNote = nil
+        isLenseProcessing = false
+        isAnimatingText = false
+        lenseResultText = ""
+        animationTask?.cancel()
+    }
+    
+    private func animateTextLineByLine(_ fullText: String) {
+        animationTask?.cancel()
+        text = ""
+        isAnimatingText = true
+        
+        let lines = fullText.components(separatedBy: "\n")
+        
+        animationTask = Task { @MainActor in
+            for (index, line) in lines.enumerated() {
+                guard !Task.isCancelled else { break }
+                
+                withAnimation(.easeOut(duration: 0.12)) {
+                    if index == 0 {
+                        text = line
+                    } else {
+                        text += "\n" + line
+                    }
+                }
+                
+                // Play a very subtle tactile feedback on each line to feel responsive
+                let generator = UISelectionFeedbackGenerator()
+                generator.selectionChanged()
+                
+                try? await Task.sleep(nanoseconds: 220_000_000) // 220ms per line
+            }
+            
+            isAnimatingText = false
+            lenseResultText = ""
+        }
+    }
+}
+
+struct SkeletonLine: View {
+    @State private var phase: CGFloat = 0
+    @State private var pulse = false
+    let width: CGFloat
+    
+    var body: some View {
+        RoundedRectangle(cornerRadius: 6)
+            .fill(Color.primary.opacity(pulse ? 0.04 : 0.08))
+            .frame(width: width, height: 16)
+            .overlay(
+                GeometryReader { geo in
+                    let size = geo.size
+                    LinearGradient(
+                        gradient: Gradient(colors: [
+                            .clear, 
+                            Color.primary.opacity(0.12), 
+                            Color.primary.opacity(0.04), 
+                            .clear
+                        ]),
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                    .frame(width: size.width / 1.2)
+                    .offset(x: -size.width + (size.width * 2) * phase)
+                }
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 6))
+            .onAppear {
+                withAnimation(Animation.linear(duration: 1.8).repeatForever(autoreverses: false)) {
+                    phase = 1.0
+                }
+                withAnimation(Animation.easeInOut(duration: 1.2).repeatForever(autoreverses: true)) {
+                    pulse = true
+                }
+            }
+    }
+}
+
+struct SkeletonView: View {
+    let typedLinesCount: Int
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            let widths: [CGFloat] = [140, 300, 260, 280, 120, 240, 270, 180]
+            
+            ForEach(0..<widths.count, id: \.self) { index in
+                if index >= typedLinesCount {
+                    SkeletonLine(width: widths[index])
+                        .transition(.opacity)
+                } else {
+                    Color.clear
+                        .frame(height: 16)
+                }
+            }
+        }
+        .padding(.horizontal, 24)
+        .padding(.top, 16)
     }
 }
