@@ -257,9 +257,14 @@ struct NativeTextView: UIViewRepresentable {
         let bodyFont = UIFont.preferredFont(forTextStyle: .body)
         textView.font = bodyFont
         textView.textColor = UIColor.label
+        
+        let defaultParagraphStyle = NSMutableParagraphStyle()
+        defaultParagraphStyle.paragraphSpacing = 8
+        
         textView.typingAttributes = [
             .font: bodyFont,
-            .foregroundColor: UIColor.label
+            .foregroundColor: UIColor.label,
+            .paragraphStyle: defaultParagraphStyle
         ]
         
         // Match native notes text container inset with 24pt side margins to align with toolbar
@@ -323,9 +328,14 @@ struct NativeTextView: UIViewRepresentable {
             uiView.attributedText = attr
             
             uiView.font = font
+            
+            let defaultParagraphStyle = NSMutableParagraphStyle()
+            defaultParagraphStyle.paragraphSpacing = 8
+            
             uiView.typingAttributes = [
                 .font: font,
-                .foregroundColor: UIColor.label
+                .foregroundColor: UIColor.label,
+                .paragraphStyle: defaultParagraphStyle
             ]
             
             let length = uiView.attributedText.length
@@ -1176,9 +1186,14 @@ struct NativeTextView: UIViewRepresentable {
             if isUpdating { return }
             if textView.text.isEmpty {
                 let defaultFont = UIFont.preferredFont(forTextStyle: .body)
+                
+                let defaultParagraphStyle = NSMutableParagraphStyle()
+                defaultParagraphStyle.paragraphSpacing = 8
+                
                 textView.typingAttributes = [
                     .font: defaultFont,
-                    .foregroundColor: UIColor.label
+                    .foregroundColor: UIColor.label,
+                    .paragraphStyle: defaultParagraphStyle
                 ]
             }
             let newText = NativeTextView.serializeToString(attributed: textView.attributedText)

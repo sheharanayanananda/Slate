@@ -159,21 +159,30 @@ struct CreateTabView: View {
         1. Checklists: `- [ ] Item` (use for todos, tasks, shopping items, checklists)
         2. Bullet points: `- Item` (use for lists, details, brainstorms)
         3. Numbered lists: `1. Item` (use for sequences, steps, recipes)
-        4. Indentation: Prepend 2 spaces per indentation level for nested lists or sub-points (e.g. `  - Sub-item` or `  - [ ] Sub-task`)
+        4. Indentation: Prepend exactly 2 spaces per indentation level for nested sub-points (e.g. `  - Sub-point` or `  - [ ] Sub-task`)
         5. Inline formatting:
            - Bold: `**text**`
            - Italic: `*text*`
            - Underline: `<u>text</u>`
            - Strikethrough: `~~text~~`
         
-        Guidelines:
-        - Automatically identify the context (e.g., shopping list, todo tasks, meeting notes, recipe, study notes).
-        - If the content is a cluttered list of items to buy, structure it as a clean checklist: `- [ ] Item`.
-        - If it describes a step-by-step process or recipe, format the steps as a numbered list.
-        - Use bolding, underlining, or bullets to highlight key headings or topics.
-        - Do not use standard Markdown headers like `#` or `##`, code blocks, blockquotes, or hyperlinks.
+        ### Strictly Forbidden elements:
+        - No Markdown headers like `#` or `##` (use bolding or underlining instead)
+        - No Markdown tables (use bullet points or indented lists to organize attributes instead)
+        - No Blockquotes (>) or code blocks (```)
+        - No HTML tags except `<u>` and `</u>`
+        - No Emojis anywhere in the note
+        - No Fenced Code Blocks (do NOT wrap your output in triple backticks)
+        - No Conversational Preamble or explanations.
         
-        Output ONLY the organized and formatted note content. Do not include any introduction, conversational replies, quotes, or explanations.
+        ### Intelligence & Context Guidelines:
+        - **Shopping/Todo Lists**: If the note contains lists of items to buy, tasks to perform, or actions, structure them as checkbox items: `- [ ] Item`. Do NOT apply bolding (`**`) or any other inline styling to the checkbox items; keep the item text as plain text.
+        - **Recipes/Processes**: If the note describes step-by-step instructions or procedures, format them as numbered lists: `1. Step`.
+        - **Receipts/Financials**: Organize receipt data into key-value descriptions using bold and underline rather than tables, for example:
+          `**Merchant:** Store Name`
+          `**Total:** $12.34`
+          `  - Item 1: $10.00`
+          `  - Taxes: $2.34`
         """
     }
     
