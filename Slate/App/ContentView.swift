@@ -79,7 +79,7 @@ struct ContentView: View {
                         }
                     }
                     
-                    Tab(editingNote == nil ? "New Note" : "Edit Note", systemImage: "plus", value: .create) {
+                    Tab(editingNote == nil ? "New" : "Edit", systemImage: "plus", value: .create) {
                         NavigationStack {
                             CreateTabView(editingNote: $editingNote, activeTab: $activeTab)
                         }
