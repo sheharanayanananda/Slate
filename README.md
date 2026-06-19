@@ -106,19 +106,6 @@ Slate/
 
 ---
 
-## 🗺️ Product Roadmap (Slate V2)
-
-* **Agent Conversational UI**
-  A new dedicated Agent tab featuring chat bubbles, mic button, and live status feedback as the agent works, replacing the current Tools tab.
-* **Platform Integration Hub**
-  OAuth setups and APIs connecting the agent directly to Google Workspace (Gmail, Calendar), Slack, and developer portals.
-* **Proactive Context Graph**
-  Continuous background semantic indexing using local vector storage to suggest relevant notes, messages, and threads inline as you write.
-* **Scribe V2 (Voice Agent)**
-  Ambient voice dictation that interprets conversational instructions (e.g., "Add a note about meeting John next Wednesday and email him the summary").
-
----
-
 ## 📄 License
 
 This project is proprietary and confidential. All rights are reserved by the copyright owner. Personal, educational, and evaluation use is permitted. Commercial use, redistribution, or marketplace publication is strictly prohibited without a separate Commercial License. 
