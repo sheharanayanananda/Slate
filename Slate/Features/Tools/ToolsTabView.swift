@@ -9,7 +9,85 @@ struct ToolsTabView: View {
     @Binding var editingNote: SlateModel?
     @Binding var activeTab: ContentView.TabIdentifier
     let onSmartLens: () -> Void
-    @State private var activeTool: ToolType?
+    
+    @State private var selectedToolItem: DisplayTool?
+    @AppStorage("is_demo_mode") private var isDemoMode = false
+    
+    struct DisplayTool: Identifiable {
+        let id: String
+        let title: String
+        let subtitle: String
+        let iconName: String
+        let iconColor: Color
+        let isReal: Bool
+        let realType: ToolType?
+    }
+    
+    private var displayedTools: [DisplayTool] {
+        var list = [
+            DisplayTool(
+                id: "smartLens",
+                title: "Smart Lens",
+                subtitle: "Capture and convert real-world text or objects into intelligent notes.",
+                iconName: "text.viewfinder",
+                iconColor: .blue,
+                isReal: true,
+                realType: .smartLens
+            ),
+            DisplayTool(
+                id: "transcribe",
+                title: "Transcribe",
+                subtitle: "Transcribe voice memos and audio recordings into smart transcripts.",
+                iconName: "waveform",
+                iconColor: .pink,
+                isReal: true,
+                realType: .transcribe
+            )
+        ]
+        
+        if isDemoMode {
+            list.append(contentsOf: [
+                DisplayTool(
+                    id: "webClipper",
+                    title: "Web Clipper",
+                    subtitle: "Extract clean note summaries and key findings from any webpage URL.",
+                    iconName: "link",
+                    iconColor: .orange,
+                    isReal: false,
+                    realType: nil
+                ),
+                DisplayTool(
+                    id: "conceptCanvas",
+                    title: "Concept Canvas",
+                    subtitle: "Sketch diagrams or notes and instantly convert them to Markdown drawings.",
+                    iconName: "pencil.and.outline",
+                    iconColor: .purple,
+                    isReal: false,
+                    realType: nil
+                ),
+                DisplayTool(
+                    id: "smartDictation",
+                    title: "Smart Dictation",
+                    subtitle: "Speak naturally and let AI segment and organize your speech in real-time.",
+                    iconName: "mic.badge.plus",
+                    iconColor: .green,
+                    isReal: false,
+                    realType: nil
+                ),
+                DisplayTool(
+                    id: "autoOrganizer",
+                    title: "Auto-Organizer",
+                    subtitle: "Automatically categorize and cluster notes into smart folder hierarchies.",
+                    iconName: "folder.badge.gearshape",
+                    iconColor: .yellow,
+                    isReal: false,
+                    realType: nil
+                )
+            ])
+        }
+        
+        return list
+    }
     
     var body: some View {
         ScrollView {
@@ -19,17 +97,17 @@ struct ToolsTabView: View {
             ]
             
             LazyVGrid(columns: columns, spacing: 16) {
-                ForEach(ToolType.allCases) { tool in
+                ForEach(displayedTools) { tool in
                     ToolCard(
                         title: tool.title,
                         subtitle: tool.subtitle,
                         iconName: tool.iconName,
                         iconColor: tool.iconColor,
                         action: {
-                            if tool == .smartLens {
+                            if tool.isReal && tool.realType == .smartLens && !isDemoMode {
                                 onSmartLens()
                             } else {
-                                activeTool = tool
+                                selectedToolItem = tool
                             }
                         }
                     )
@@ -38,8 +116,17 @@ struct ToolsTabView: View {
             .padding()
         }
         .navigationTitle("Tools")
-        .sheet(item: $activeTool) { tool in
-            ToolSheet(type: tool, editingNote: $editingNote, activeTab: $activeTab)
+        .sheet(item: $selectedToolItem) { tool in
+            if tool.isReal && !isDemoMode, let realType = tool.realType {
+                ToolSheet(type: realType, editingNote: $editingNote, activeTab: $activeTab)
+            } else {
+                ComingSoonToolSheet(
+                    title: tool.title,
+                    iconName: tool.iconName,
+                    iconColor: tool.iconColor,
+                    description: tool.subtitle
+                )
+            }
         }
     }
 }

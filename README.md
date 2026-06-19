@@ -124,3 +124,9 @@ The project includes test targets to verify core functionality:
 - **SlateUITests**: Automated interface tests for note creation and screen flows.
 
 Run tests using `⌘ + U` in Xcode or via the Test navigator.
+
+---
+
+## License
+
+This project is proprietary and confidential. All rights are reserved by the copyright owner. See the [LICENSE](file:///Users/thinethshehara/Documents/Store/Projects/Slate/LICENSE) file for details.

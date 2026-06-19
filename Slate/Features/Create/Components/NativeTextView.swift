@@ -210,7 +210,14 @@ struct NativeKeyboardToolbar: View {
 }
 
 class SlateTextView: UITextView {
+    var isLayoutUpdating = false
+    
     override func caretRect(for position: UITextPosition) -> CGRect {
+        if isLayoutUpdating {
+            let defaultFont = self.font ?? UIFont.preferredFont(forTextStyle: .body)
+            return CGRect(x: 24, y: 16, width: 2, height: defaultFont.lineHeight)
+        }
+        
         var rect = super.caretRect(for: position)
         
         let offset = self.offset(from: self.beginningOfDocument, to: position)
@@ -320,12 +327,17 @@ struct NativeTextView: UIViewRepresentable {
     }
     
     func updateUIView(_ uiView: UITextView, context: Context) {
+        let slateTextView = uiView as? SlateTextView
+        
         if context.coordinator.lastParsedText != text && !context.coordinator.isUpdating {
             let font = UIFont.preferredFont(forTextStyle: .body)
             let attr = NativeTextView.parseToAttributed(text: text, font: font)
             
             let selectedRange = uiView.selectedRange
+            slateTextView?.isLayoutUpdating = true
+            context.coordinator.isUpdating = true
             uiView.attributedText = attr
+            context.coordinator.isUpdating = false
             
             uiView.font = font
             
@@ -347,6 +359,7 @@ struct NativeTextView: UIViewRepresentable {
             }
             
             context.coordinator.lastParsedText = text
+            slateTextView?.isLayoutUpdating = false
         }
     }
     

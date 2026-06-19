@@ -15,6 +15,7 @@ struct SettingsView: View {
     var onDismiss: (() -> Void)? = nil
 
     @State private var showKey: Bool = false
+    @AppStorage("is_demo_mode") private var isDemoMode = false
 
     //----------------- Start of UI Code -----------------//
     var body: some View {
@@ -75,6 +76,13 @@ struct SettingsView: View {
                             .controlSize(.small)
                     }
                 }
+            }
+            
+            Section(
+                header: Text("Demo Mode"),
+                footer: Text("Enabling demo mode loads pre-configured promotional slates, populates new notes with rich formatting templates, and simulates tools.")
+            ) {
+                Toggle("Demo Mode", isOn: $isDemoMode)
             }
         }
         .navigationTitle("Settings")
