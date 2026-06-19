@@ -129,4 +129,10 @@ Run tests using `⌘ + U` in Xcode or via the Test navigator.
 
 ## License
 
-This project is proprietary and confidential. All rights are reserved by the copyright owner. See the [LICENSE](file:///Users/thinethshehara/Documents/Store/Projects/Slate/LICENSE) file for details.
+This project is proprietary and confidential. All rights are reserved by the copyright owner. Personal, educational, and evaluation use is permitted. Commercial use, redistribution, or marketplace publication is strictly prohibited without a separate Commercial License. 
+
+To purchase a Commercial License or discuss enterprise use cases, please contact the author:
+- **Email:** sheharanayanananda@gmail.com
+- **LinkedIn:** [Thineth Nayanananda](https://www.linkedin.com/in/thineth-nayanananda-54815b228/)
+
+See the [LICENSE](file:///Users/thinethshehara/Documents/Store/Projects/Slate/LICENSE) file for the full terms.
