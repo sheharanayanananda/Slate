@@ -34,7 +34,7 @@ enum ToolType: String, Identifiable, CaseIterable {
         case .smartLens:
             return "text.viewfinder"
         case .scribe:
-            return "mic"
+            return "waveform"
         }
     }
     
@@ -43,7 +43,7 @@ enum ToolType: String, Identifiable, CaseIterable {
         case .smartLens:
             return .blue
         case .scribe:
-            return .purple
+            return .red
         }
     }
 }

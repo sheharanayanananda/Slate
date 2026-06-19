@@ -76,16 +76,16 @@ struct ScribeToolSheet: View {
             Button(action: startRecordingSimulation) {
                 ZStack {
                     Circle()
-                        .fill(Color.purple.opacity(0.12))
+                        .fill(Color.red.opacity(0.12))
                         .frame(width: 120, height: 120)
                     
                     Circle()
-                        .fill(Color.purple.opacity(0.2))
+                        .fill(Color.red.opacity(0.2))
                         .frame(width: 96, height: 96)
                     
-                    Image(systemName: "mic.fill")
+                    Image(systemName: "waveform")
                         .font(.system(size: 40))
-                        .foregroundColor(.purple)
+                        .foregroundColor(.red)
                 }
             }
             
@@ -107,7 +107,7 @@ struct ScribeToolSheet: View {
             VStack(alignment: .leading, spacing: 16) {
                 HStack(spacing: 16) {
                     Image(systemName: "bubble.left.and.bubble.right.fill")
-                        .foregroundColor(.purple)
+                        .foregroundColor(.red)
                         .frame(width: 24)
                     VStack(alignment: .leading) {
                         Text("Vocal Dictation")
@@ -121,7 +121,7 @@ struct ScribeToolSheet: View {
                 
                 HStack(spacing: 16) {
                     Image(systemName: "waveform.and.mic")
-                        .foregroundColor(.purple)
+                        .foregroundColor(.red)
                         .frame(width: 24)
                     VStack(alignment: .leading) {
                         Text("On-Device Speech Recognition")
@@ -135,7 +135,7 @@ struct ScribeToolSheet: View {
                 
                 HStack(spacing: 16) {
                     Image(systemName: "sparkles")
-                        .foregroundColor(.purple)
+                        .foregroundColor(.red)
                         .frame(width: 24)
                     VStack(alignment: .leading) {
                         Text("Intelligence Structuring")
@@ -155,12 +155,12 @@ struct ScribeToolSheet: View {
         VStack(spacing: 32) {
             Text(timeString(from: recordingSeconds))
                 .font(.system(size: 48, weight: .bold, design: .monospaced))
-                .foregroundColor(.purple)
+                .foregroundColor(.red)
             
             HStack(spacing: 4) {
                 ForEach(0..<15) { index in
                     Capsule()
-                        .fill(Color.purple)
+                        .fill(Color.red)
                         .frame(width: 6, height: waveformHeights[index])
                         .animation(.easeInOut(duration: 0.15), value: waveformHeights[index])
                 }
@@ -199,7 +199,7 @@ struct ScribeToolSheet: View {
         VStack(spacing: 24) {
             ProgressView()
                 .controlSize(.large)
-                .tint(.purple)
+                .tint(.red)
             
             VStack(spacing: 8) {
                 Text("Analyzing Speech")
@@ -249,7 +249,7 @@ struct ScribeToolSheet: View {
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
                     .padding()
-                    .background(Color.purple)
+                    .background(Color.red)
                     .cornerRadius(12)
                     .padding(.horizontal, 24)
             }

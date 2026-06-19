@@ -38,8 +38,8 @@ struct ToolsTabView: View {
                 id: "scribe",
                 title: "Scribe",
                 subtitle: "Speak naturally to capture thoughts, build task lists, and organize slates instantly.",
-                iconName: "mic",
-                iconColor: .purple,
+                iconName: "waveform",
+                iconColor: .red,
                 isReal: true,
                 realType: .scribe
             )

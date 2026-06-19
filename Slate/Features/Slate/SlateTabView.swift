@@ -129,7 +129,7 @@ struct SlateTabView: View {
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 HStack(spacing: 16) {
-                    Button("Scribe", systemImage: "mic") {
+                    Button("Scribe", systemImage: "waveform") {
                         onScribe()
                     }
                     Button("Smart Lens", systemImage: "text.viewfinder") {
