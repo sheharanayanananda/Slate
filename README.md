@@ -1,6 +1,6 @@
 # Slate
 
-Slate is a modern, intuitive, and intelligent note-taking application built exclusively for iOS using Swift and SwiftUI. It bridges advanced rich-text formatting, local database persistence, and secure credential storage with visual AI intelligence and document scanning.
+Slate is an autonomous AI agentic knowledge workspace built exclusively for iOS using Swift and SwiftUI. It combines a distraction-free rich-text editor and local persistence with a conversational AI agent interface capable of auto-generating notes, executing actions, and connecting to external platforms (Gmail, Slack, Calendar) via voice and chat.
 
 ---
 
@@ -40,27 +40,27 @@ Slate is a modern, intuitive, and intelligent note-taking application built excl
 * **Swipe Actions**
   Accessible via left-swipe (to share and export) and right-swipe (to delete) actions on any note list entry.
 
-### Smart Lens
-* **Document Scanner**
-  Integrates VisionKit's VNDocumentCameraViewController to automatically crop, perspective-correct, and enhance document captures.
-* **Local Preprocessing**
-  Performs two-stage local preprocessing using Apple's Vision framework:
-  * *Text Recognition (OCR)*: Extracts raw text content from the document image.
-  * *Image Classification*: Identifies objects and scenes in the image to provide additional context.
-* **Contextual Note Synthesis**
-  Combines the extracted OCR text and visual object classifications, passing them to the user-selected cloud model to generate structured Markdown notes with titles, summaries, key details, action items, and searchable hashtags.
-* **Low-OCR Fallback**
-  If the captured image has little or no text (e.g. photos of scenes or physical objects), the LLM synthesizes a note describing the visual scene based on on-device classification labels.
+### Conversational AI Agent Tab
+* **Interactive Chat Interface**
+  A central command dashboard featuring a message input field and a mic option for ambient voice interactions. Type commands or talk directly to Slate (e.g., "Summarize my tasks" or "Create a draft note from my last meeting details").
+* **Autonomous Execution**
+  The agent interprets your requests to perform background tasks, synthesize notes, and update action items on your behalf.
+* **Platform Connections**
+  Integrates securely with external platforms (Gmail, Slack, Google Calendar, Jira) to retrieve context, write emails, sync meetings, and delegate tasks without leaving the app.
 
 ### Settings
 * **Slide Transition**
   Tapping the gear icon on the main toolbar slides the settings panel in from the left, and tapping the back chevron button slides it back out of view. No gesture recognizers are used for navigation.
 
-### Product Roadmap
-* **Scribe**
-  Voice-command dictation and intelligent note structuring (Coming Soon).
-* **Web Clipper**
-  Extract clean note summaries and key findings from webpage URLs (Coming Soon).
+### Product Roadmap (Slate V2)
+* **Agent Conversational UI**
+  The new dedicated Agent tab featuring chat bubbles, mic button, and live status feedback as the agent works.
+* **Platform Integration Hub**
+  OAuth setup and APIs connecting the agent directly to Google Workspace (Gmail, Calendar), Slack, and developer portals.
+* **Proactive Context Graph**
+  Continuous background semantic indexing using local vector storage to suggest relevant notes, messages, and threads inline as you write.
+* **Scribe V2 (Voice Agent)**
+  Ambient voice dictation that interprets conversational instructions (e.g., "Add a note about meeting John next Wednesday and email him the summary").
 
 ---
 
@@ -72,7 +72,7 @@ The project follows a clean, modular feature-based folder structure:
 Slate/
 ├── App/
 │   ├── SlateApp.swift          # App entrypoint and SwiftData model container initialization
-│   └── ContentView.swift       # Tab navigation hub, settings transition, and AI scanner pipeline
+│   └── ContentView.swift       # Tab navigation hub, settings transition, and AI agent pipeline
 ├── Core/
 │   ├── Models/
 │   │   └── SlateModel.swift    # SwiftData Schema, RTF encoders, and Markdown parsers
@@ -86,10 +86,10 @@ Slate/
 │   │   ├── CreateTabView.swift # Note creation/editing interface
 │   │   └── Components/
 │   │       └── NativeTextView.swift # Custom bridged UITextView, NSTextAttachment, and Markdown parser
-│   ├── Tools/
-│   │   ├── ToolsTabView.swift  # Feature cards list and demo tool configurations
-│   │   ├── ToolType.swift      # Enum representing available utilities
-│   │   └── Components/         # Sheets for Smart Lens, Scribe, and custom ToolCard
+│   ├── Agent/
+│   │   ├── AgentTabView.swift  # Conversational chat & voice AI Agent tab
+│   │   ├── PlatformConnector.swift # Connections for external APIs (Gmail, Slack, etc.)
+│   │   └── Components/         # Chat message elements, waveforms, and visual feedback
 │   └── Settings/
 │       ├── SettingsView.swift  # Key configurations and model settings
 │       └── SettingsViewModel.swift # Keychain credentials validation and model fetching
@@ -106,8 +106,8 @@ Slate/
 
 - **Xcode 15.0** or later
 - **iOS 17.0** or later (required for SwiftData and TextKit 2 APIs)
-- A device or simulator with camera permissions enabled (for Smart Lens)
-- Active internet connection (for cloud-based Ollama features)
+- A device or simulator with microphone permissions enabled (for voice features)
+- Active internet connection (for cloud-based features)
 
 ---
 
@@ -133,14 +133,10 @@ Slate/
 
 ## License
 
-This project is proprietary and confidential. All rights are reserved by the copyright owner. The Software is source-available solely for personal, educational, and evaluation purposes. 
+This project is proprietary and confidential. All rights are reserved by the copyright owner. Personal, educational, and evaluation use is permitted. Commercial use, redistribution, or marketplace publication is strictly prohibited without a separate Commercial License. 
 
-### Key Restrictions:
-* **No Commercial Use**: Any commercial use, business operations, or integration into proprietary products requires a separate Commercial License.
-* **No SaaS or Cloud Hosting**: Deploying the software to offer its features or APIs as a service (SaaS) to third parties is strictly prohibited.
-* **No Marketplace Publication**: You may not publish or distribute the application on public app marketplaces (such as the Apple App Store).
-* **No AI Training Ingestion**: Utilizing the source code, assets, or design systems for training or fine-tuning artificial intelligence/machine learning models is strictly forbidden.
-* **Corporate & Organizational Exclusion**: Personal/educational evaluation grants do not apply to commercial entities, organizational operations, or internal business testing.
-* **Design Protection**: Replicating or copying the visual design layouts, transitions, or assets of this application is prohibited.
+To purchase a Commercial License or discuss enterprise use cases, please contact the author:
+- **Email:** sheharanayanananda@gmail.com
+- **LinkedIn:** [Thineth Nayanananda](https://www.linkedin.com/in/thineth-nayanananda-54815b228/)
 
-For commercial licensing agreements, custom integrations, or enterprise inquiries, please review the [LICENSE](file:///Users/thinethshehara/Documents/Store/Projects/Slate/LICENSE) file or contact the author.
+See the [LICENSE](file:///Users/thinethshehara/Documents/Store/Projects/Slate/LICENSE) file for the full terms.
