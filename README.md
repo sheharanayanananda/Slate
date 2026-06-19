@@ -1,6 +1,6 @@
-# 📝 Slate: Autonomous AI Agentic Workspace
+# 📝 Slate: Intelligent iOS Note-Taking Application
 
-Slate is an autonomous AI agentic knowledge workspace built exclusively for iOS using Swift and SwiftUI. It combines a distraction-free rich-text editor and local persistence with a conversational AI agent interface capable of auto-generating notes, executing actions, and connecting to external platforms via voice and chat.
+Slate is a modern, intuitive, and intelligent note-taking application built exclusively for iOS using Swift and SwiftUI. It bridges advanced rich-text formatting, local database persistence, and secure credential storage with visual AI intelligence and document scanning.
 
 ---
 
@@ -31,6 +31,12 @@ Slate is an autonomous AI agentic knowledge workspace built exclusively for iOS 
 * **Plain Text Export:** Compiles and saves notes into standard `.txt` files.
 * **Swipe Actions:** Accessible via left-swipe (to share/export) and right-swipe (to delete) actions on any note list entry.
 
+### 🔍 Smart Lens & Scribe
+* **Document Scanner:** Integrates VisionKit's `VNDocumentCameraViewController` to automatically crop, perspective-correct, and enhance document captures.
+* **Local Preprocessing:** Performs two-stage local preprocessing using Apple's Vision framework (Text Recognition/OCR and Image Classification) to extract text and image context.
+* **Contextual Synthesis:** Synthesizes the extracted text and visual tags using LLMs to compile structured markdown notes.
+* **Scribe Dictation:** Voice command dictation and intelligent note structuring features to format transcripts.
+
 ---
 
 ## 🛠️ Architecture & Project Structure
@@ -41,7 +47,7 @@ The project follows a clean, modular feature-based folder structure:
 Slate/
 ├── App/
 │   ├── SlateApp.swift          # App entrypoint and SwiftData model container initialization
-│   └── ContentView.swift       # Tab navigation hub, settings transition, and AI agent pipeline
+│   └── ContentView.swift       # Tab navigation hub, settings transition, and AI scanner pipeline
 ├── Core/
 │   ├── Models/
 │   │   └── SlateModel.swift    # SwiftData Schema, RTF encoders, and Markdown parsers
@@ -55,10 +61,10 @@ Slate/
 │   │   ├── CreateTabView.swift # Note creation/editing interface
 │   │   └── Components/
 │   │       └── NativeTextView.swift # Custom bridged UITextView, NSTextAttachment, and Markdown parser
-│   ├── Agent/
-│   │   ├── AgentTabView.swift  # Conversational chat & voice AI Agent tab
-│   │   ├── PlatformConnector.swift # Connections for external APIs (Gmail, Slack, etc.)
-│   │   └── Components/         # Chat message elements, waveforms, and visual feedback
+│   ├── Tools/
+│   │   ├── ToolsTabView.swift  # Feature cards list and demo tool configurations
+│   │   ├── ToolType.swift      # Enum representing available utilities
+│   │   └── Components/         # Sheets for Smart Lens (DocumentScannerView), Scribe (ScribeToolSheet), and ToolCard
 │   └── Settings/
 │       ├── SettingsView.swift  # Key configurations and model settings
 │       └── SettingsViewModel.swift # Keychain credentials validation and model fetching
@@ -75,7 +81,7 @@ Slate/
 
 * **Xcode 15.0** or later
 * **iOS 17.0** or later (required for SwiftData and TextKit 2 APIs)
-* A device or simulator with microphone permissions enabled (for voice features)
+* A device or simulator with camera and microphone permissions enabled (for Smart Lens and Scribe)
 * Active internet connection (for cloud-based features)
 
 ---
@@ -103,9 +109,9 @@ Slate/
 ## 🗺️ Product Roadmap (Slate V2)
 
 * **Agent Conversational UI**
-  The new dedicated Agent tab featuring chat bubbles, mic button, and live status feedback as the agent works.
+  A new dedicated Agent tab featuring chat bubbles, mic button, and live status feedback as the agent works, replacing the current Tools tab.
 * **Platform Integration Hub**
-  OAuth setup and APIs connecting the agent directly to Google Workspace (Gmail, Calendar), Slack, and developer portals.
+  OAuth setups and APIs connecting the agent directly to Google Workspace (Gmail, Calendar), Slack, and developer portals.
 * **Proactive Context Graph**
   Continuous background semantic indexing using local vector storage to suggest relevant notes, messages, and threads inline as you write.
 * **Scribe V2 (Voice Agent)**
