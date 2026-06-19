@@ -1,24 +1,58 @@
-Slate Proprietary and Source-Available License
+Slate Proprietary Source-Available and Commercial Restriction License
 
 Copyright (c) 2026 Thineth Shehara. All rights reserved.
 
-This software and all associated source files (collectively, the "Software") are proprietary. Unauthorized copying, modification, redistribution, or commercial use of the Software, via any medium or platform, is strictly prohibited except as permitted below.
+This software, including all source code, assets, documentation, UI/UX designs, and database structures (collectively, the "Software"), is proprietary and confidential. The Software is source-available for limited evaluation and educational use. Unauthorized copying, modification, redistribution, sublicensing, commercial use, or public execution of the Software, via any medium or platform, is strictly prohibited except as explicitly permitted under the terms of this License.
 
-1. PERSONAL AND EDUCATIONAL USE LICENSE
-You are granted a non-exclusive, non-transferable, royalty-free license to download, run, inspect, and modify the Software solely for personal, educational, research, and non-commercial evaluation purposes (including inspections by prospective employers and recruiters). 
+1. LIMITED LICENSE GRANTS
 
-2. COMMERCIAL USE RESTRICTIONS
-You may not use the Software, or any derivative works thereof, for any commercial purpose without obtaining a separate, written Commercial License from the copyright owner. Commercial purposes include, but are not limited to:
-- Operating a business, commercial enterprise, or generating revenue using the Software.
-- Publishing, sublicensing, or distributing the Software on any public application store or marketplace (including the Apple App Store).
-- Integrating the Software into any closed-source, proprietary, or commercial product or service.
+1.1 Personal and Educational Evaluation License
+Subject to the terms and conditions of this License, you are granted a non-exclusive, non-transferable, royalty-free, revocable, personal license to download, run locally, inspect, and modify the Software solely for personal, educational, academic research, and non-commercial evaluation purposes.
 
-3. COMMERCIAL LICENSING INQUIRIES
-Businesses, enterprises, or developers wishing to obtain a license for commercial use, enterprise deployment, closed-source forks, or redistribution rights may contact the copyright owner to negotiate and purchase a Commercial License.
+1.2 Recruiter and Candidate Assessment License
+You are permitted to host this Software on your personal public profile (such as GitHub or LinkedIn portfolio) to showcase your work. Prospective employers, recruiters, and assessment panels are granted a limited license to download, run, and inspect the Software solely for the purpose of evaluating your technical capabilities. No prospective employer, recruiter, or third party may reuse, copy, redistribute, adapt, or integrate any portion of the Software for any other purpose.
 
-Contact Channels:
+2. CORPORATE AND ORGANIZATIONAL EXCLUSIONS
+
+The personal and educational license granted in Section 1.1 strictly excludes any corporate, enterprise, organizational, commercial, or government use. You may not use, run, or test this Software for:
+- Corporate operations, internal testing, prototyping, or commercial development.
+- Business tasks or project development within any company, partnership, sole proprietorship, non-profit organization, or public entity.
+- Any use by employees, independent contractors, or consultants in the course of their professional duties.
+
+3. STRICT PROHIBITIONS AND LIMITATIONS
+
+3.1 No Commercial Use or Exploitation
+You may not use the Software, or any derivative works thereof, for any commercial purpose, revenue-generating activity, or proprietary product development without obtaining a separate, written Commercial License from the copyright owner.
+
+3.2 No Software-as-a-Service (SaaS) or Cloud Hosting
+You are strictly prohibited from hosting, deploying, or running the Software on public or private servers, cloud infrastructures, or networks to offer the Software's features, APIs, or interfaces as a service (including Software-as-a-Service, Platform-as-a-Service, or Infrastructure-as-a-Service) to any third party, regardless of whether such service is offered for a fee or free of charge.
+
+3.3 No App Store or Marketplace Publication
+You may not publish, submit, distribute, or make available the Software, or modified versions thereof, on any public application marketplace, app store (including but not limited to the Apple App Store), or digital distribution network.
+
+3.4 Restrictions on Forks and Public Repositories
+You may fork the repository on public hosting platforms (such as GitHub) solely to maintain a personal copy for the permitted uses in Section 1. Any public fork of this Software must contain this exact License file unmodified and must state clearly on the repository home page that the Software is proprietary and licensed under these terms. You may not distribute modified versions of the Software in a manner that bypasses the terms of this License.
+
+3.5 No AI Ingestion, Scraping, or Model Training
+You are strictly prohibited from utilizing the Software, including its source code, assets, UI layouts, or database schemas, for the purpose of training, fine-tuning, reinforcing, validating, or running any artificial intelligence, machine learning model, large language model (LLM), neural network, or algorithmic system. Web scraping or crawler indexing of the source code for machine learning datasets is strictly forbidden.
+
+3.6 No Copying of Visual Design and UX
+You may not replicate, extract, or copy the unique visual design system, layout arrangements, typography setups, interactive transitions, or assets of the Software for use in other commercial or proprietary applications.
+
+4. COMMERCIAL LICENSING INQUIRIES
+
+Any use of the Software outside the narrow scope of Section 1 requires a separate, negotiated Commercial License. For inquiries regarding commercial deployments, custom forks, integrations, or enterprise rights, please contact the copyright owner:
 - Email: sheharanayanananda@gmail.com
 - LinkedIn: https://www.linkedin.com/in/thineth-nayanananda-54815b228/
 
-4. NO WARRANTY
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+5. TERMINATION
+
+This License and your rights under it will terminate automatically if you fail to comply with any of its terms. Upon termination, you must immediately cease all use of the Software and destroy all copies of the Software in your possession.
+
+6. NO WARRANTY
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+7. LIMITATION OF LIABILITY
+
+IN NO EVENT SHALL THINETH SHEHARA BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.

@@ -162,7 +162,7 @@ struct SlateTabView: View {
         let note3 = SlateModel(title: "AI Note Organizer", desc: "Unstructured notes are hard to read. Write down your messy thoughts, and tap the Sparkles icon in the editor toolbar. The AI will automatically clean up typos, fix grammar, and organize your text into structured bullet points and checklist items.")
         note3.created_at = Date().addingTimeInterval(-120)
         
-        let note4 = SlateModel(title: "Smart Lens Visual AI", desc: "Tap the Smart Lens button to scan documents, whiteboards, or receipts. The app uses on-device Vision OCR to extract text and image classification to identify objects. Gemma 3 then synthesizes a clean, context-aware note. If no text is found, it fallbacks to describing the visual scene.")
+        let note4 = SlateModel(title: "Smart Lens Visual AI", desc: "Tap the Smart Lens button to scan documents, whiteboards, or receipts. The app uses on-device Vision OCR to extract text and image classification to identify objects. The user-selected Gemma model then synthesizes a clean, context-aware note. If no text is found, it fallbacks to describing the visual scene.")
         note4.created_at = Date().addingTimeInterval(-180)
         
         let note5 = SlateModel(title: "Note Export Options", desc: "Need your note elsewhere? Swipe left on any note to open the share options:\n\n1. Share as Rich Text (RTF)\n2. Save and share as PDF document\n3. Export as plain text (.txt)")
