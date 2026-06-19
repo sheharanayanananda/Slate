@@ -76,7 +76,7 @@ struct ContentView: View {
                                     activeTab = .create
                                 },
                                 onSmartLens: { showScanner = true },
-                                onTranscribe: { quickTool = .transcribe }
+                                onScribe: { quickTool = .scribe }
                             )
                         }
                     }

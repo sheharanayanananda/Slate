@@ -79,7 +79,6 @@ struct SettingsView: View {
             }
             
             Section(
-                header: Text("Demo Mode"),
                 footer: Text("Enabling demo mode loads pre-configured promotional slates, populates new notes with rich formatting templates, and simulates tools.")
             ) {
                 Toggle("Demo Mode", isOn: $isDemoMode)

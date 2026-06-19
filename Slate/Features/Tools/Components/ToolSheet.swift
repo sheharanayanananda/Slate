@@ -16,8 +16,8 @@ struct ToolSheet: View {
             switch type {
             case .smartLens:
                 EmptyView()
-            case .transcribe:
-                TranscribeToolSheet()
+            case .scribe:
+                ScribeToolSheet()
             }
         }
     }

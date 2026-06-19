@@ -35,13 +35,13 @@ struct ToolsTabView: View {
                 realType: .smartLens
             ),
             DisplayTool(
-                id: "transcribe",
-                title: "Transcribe",
-                subtitle: "Transcribe voice memos and audio recordings into smart transcripts.",
-                iconName: "waveform",
-                iconColor: .pink,
+                id: "scribe",
+                title: "Scribe",
+                subtitle: "Speak naturally to capture thoughts, build task lists, and organize slates instantly.",
+                iconName: "mic",
+                iconColor: .purple,
                 isReal: true,
-                realType: .transcribe
+                realType: .scribe
             )
         ]
         

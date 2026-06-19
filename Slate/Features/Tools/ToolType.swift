@@ -7,7 +7,7 @@ import SwiftUI
 
 enum ToolType: String, Identifiable, CaseIterable {
     case smartLens
-    case transcribe
+    case scribe
     
     var id: String { self.rawValue }
     
@@ -15,8 +15,8 @@ enum ToolType: String, Identifiable, CaseIterable {
         switch self {
         case .smartLens:
             return "Smart Lens"
-        case .transcribe:
-            return "Transcribe"
+        case .scribe:
+            return "Scribe"
         }
     }
     
@@ -24,8 +24,8 @@ enum ToolType: String, Identifiable, CaseIterable {
         switch self {
         case .smartLens:
             return "Capture and convert real-world text or objects into intelligent notes."
-        case .transcribe:
-            return "Transcribe voice memos and audio recordings into smart transcripts."
+        case .scribe:
+            return "Speak naturally to capture thoughts, build task lists, and organize slates instantly."
         }
     }
     
@@ -33,8 +33,8 @@ enum ToolType: String, Identifiable, CaseIterable {
         switch self {
         case .smartLens:
             return "text.viewfinder"
-        case .transcribe:
-            return "waveform"
+        case .scribe:
+            return "mic"
         }
     }
     
@@ -42,8 +42,8 @@ enum ToolType: String, Identifiable, CaseIterable {
         switch self {
         case .smartLens:
             return .blue
-        case .transcribe:
-            return .pink
+        case .scribe:
+            return .purple
         }
     }
 }

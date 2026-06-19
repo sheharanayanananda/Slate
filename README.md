@@ -57,16 +57,10 @@ Slate is a modern, intuitive, and intelligent note-taking application built excl
   Tapping the gear icon on the main toolbar slides the settings panel in from the left, and tapping the back chevron button slides it back out of view. No gesture recognizers are used for navigation.
 
 ### Product Roadmap
-* **Transcribe**
-  High-fidelity audio recording and transcription (Coming Soon).
+* **Scribe**
+  Voice-command dictation and intelligent note structuring (Coming Soon).
 * **Web Clipper**
   Extract clean note summaries and key findings from webpage URLs (Coming Soon).
-
-### Demo Mode
-* **Promotional Notes**
-  Enabling Demo Mode in settings pre-loads 5 styled promotional slates into the database to showcase checklist interactions, export features, and editor formatting.
-* **Simulated Tools**
-  Presents simulated tool cards for coming soon features in the Tools tab (Web Clipper, Concept Canvas, Smart Dictation, and Auto-Organizer) and routes all cards to generic preview sheets.
 
 ---
 
@@ -95,7 +89,7 @@ Slate/
 │   ├── Tools/
 │   │   ├── ToolsTabView.swift  # Feature cards list and demo tool configurations
 │   │   ├── ToolType.swift      # Enum representing available utilities
-│   │   └── Components/         # Sheets for Smart Lens, Transcribe, and custom ToolCard
+│   │   └── Components/         # Sheets for Smart Lens, Scribe, and custom ToolCard
 │   └── Settings/
 │       ├── SettingsView.swift  # Key configurations and model settings
 │       └── SettingsViewModel.swift # Keychain credentials validation and model fetching
