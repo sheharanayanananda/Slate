@@ -1,72 +1,64 @@
 # Slate
 
-Slate is a modern, intuitive, and intelligent note-taking application built exclusively for iOS using Swift and SwiftUI. It leverages local database persistence, hardware-secured credential storage, and an asynchronous language model pipeline with on-device computer vision and document processing.
+Slate is a simple, smart note-taking app for iOS built with Swift and SwiftUI. It saves notes offline on your device, encrypts your keys, and lets you scan documents to create organized notes using AI.
 
 ---
 
-## Core Features
+## Features
 
-### Rich Text & Markdown Outliner
-* **Custom UIKit Text Engine Bridge**
-  Uses a custom SwiftUI representable wrapper (`NativeTextView`) around UIKit's `UITextView` (`SlateTextView`) to enable precise typography controls, custom paragraph spacing, and custom cursor layouts.
-* **Interactive Checklists**
-  Converts standard Markdown checkbox syntax (`- [ ]` and `- [x]`) into interactive checkbox attachments using custom `NSTextAttachment` objects. Users can tap directly on the checklists inside the editor to toggle task completion, which automatically serializes and updates the raw note body in real-time.
-* **Formatting Toolbar**
-  A custom keyboard accessory toolbar provides formatting options including checklists, bullet lists, numbered lists, text formatting modifiers, and list indentation levels.
-* **Layout Safeguards**
-  Utilizes layout state monitoring flags within the text view coordinator to prevent recursive layout and selection loops, guaranteeing stability when loading or editing heavily styled rich-text notes.
+### Rich Text Editor
+* **Writing Canvas**
+  Write and format notes easily. The editor supports bold, italic, underline, strikethrough, and paragraph spacing.
+* **Checklists**
+  Use standard markdown (`- [ ]` and `- [x]`) for lists. You can tap directly on the checkboxes inside the editor to check or uncheck items. The note saves automatically.
+* **Keyboard Toolbar**
+  A formatting bar sits above your keyboard so you can quickly style text, make lists, or indent items with one tap.
+* **Typing Safeguards**
+  Hidden safeguards keep the editor smooth, responsive, and stable while you write.
 
-### AI Note Structuring
+### AI Note Organizer
 * **Smart Organizer**
-  A toolbar utility powered by the user's selected language model (defaulting to gemma4:31b) that cleans up unstructured notes, formats action items into checklists, corrects spelling and grammar, and structures the text into a clean, logical outline.
-* **Skeleton Loader Interface**
-  Displays a pulsing, wireframe skeleton interface in place of the text editor while the AI compiles and structures the note in the background.
-* **Typewriter Presentation**
-  Renders the organized AI output using a line-by-line typewriter animation as it populates the editor canvas, coupled with haptic selection feedback.
+  Tap the sparkles button in the toolbar. The AI cleans up messy notes, fixes spelling mistakes, and organizes your text into a clean outline.
+* **Skeleton Loading Screen**
+  Shows a loading screen while the AI structures your note in the background.
+* **Typewriter Effect**
+  Renders the AI's organized output line-by-line with soft haptic feedback.
 
-### Local Persistence & Security
-* **Natively Persistent Database**
-  Implements local, transaction-safe storage for notes using Apple's modern SwiftData framework. Notes are automatically sorted chronologically in reverse order (newest first).
-* **Hardware-Secured Credentials**
-  Stores and encrypts Ollama API keys on-device using Apple's Keychain Services with secure accessibility flags (accessible after first device unlock), keeping credentials separate from UserDefaults.
+### Saving Notes Offline & Security
+* **Offline Saving**
+  Saves your notes directly on your device using SwiftData. Notes are automatically sorted by date (newest first).
+* **Secure API Keys**
+  Encrypts and stores your API keys safely on your device using Apple Keychain so they stay private.
 
-### Share and Export
-* **Rich Text (RTF) Export**
-  Exports formatted text documents to Mail, Messages, or Apple Notes, keeping custom styling and checklist states intact.
-* **PDFKit Document Generation**
-  Renders note titles, styled content, and checkbox selections into standard A4 PDF documents using PDFKit and UIGraphicsPDFRenderer.
-* **Plain Text Export**
-  Compiles and saves notes into standard .txt files.
-* **Swipe Actions**
-  Accessible via left-swipe (to share and export) and right-swipe (to delete) actions on any note list entry.
+### Sharing & Exporting
+* **Export Options**
+  Export your notes as Rich Text (RTF), A4 PDF files (using PDFKit), or plain text (.txt) files.
+* **Quick List Actions**
+  Swipe left on any note in the list to share or export it. Swipe right to delete.
 
-### Visual Scanner (Smart Lens)
-* **VisionKit Document Scanner**
-  Integrates VisionKit's VNDocumentCameraViewController to automatically crop, perspective-correct, and enhance document captures.
-* **On-Device Vision Analysis**
-  Performs two-stage local preprocessing using Apple's Vision framework:
-  * *Text Recognition (OCR)*: Extracts raw text content from the document image.
-  * *Image Classification*: Identifies objects and scenes in the image to provide additional context.
-* **Contextual Note Synthesis**
-  Combines the extracted OCR text and visual object classifications, passing them to the selected language model to generate structured Markdown notes with titles, summaries, key details, action items, and searchable hashtags.
-* **Low-OCR Fallback**
-  If the captured image has little or no text (e.g. photos of scenes or physical objects), the LLM synthesizes a note describing the visual scene based on on-device classification labels.
+### Smart Lens (Camera Scan)
+* **Document Scan**
+  Scan paper documents, receipts, or whiteboards using your camera with VisionKit. The app crops and cleans up the image automatically.
+* **Text & Object Detection**
+  Recognizes text in the scan and identifies objects or scenes using Apple's Vision framework.
+* **AI Note Creator**
+  Uses the scanned text and image details to generate structured markdown notes. If the scan has no text, the AI describes the scene instead.
 
-### Animated Side Drawer Settings
+### Settings Panel
 * **Slide Transition**
-  The settings drawer is entirely button-driven and transition-animated. Tapping the gear icon on the main toolbar slides the settings panel in from the left using a spring-driven horizontal offset transition, and tapping the back chevron button slides it back out of view. No gesture recognizers are used for navigation.
+  Tap the gear button on the toolbar to slide the settings panel in from the left. Tap the back button to slide it away.
 
 ### Product Roadmap
 * **Scribe**
-  Voice-command dictation and intelligent note structuring (Coming Soon).
+  Speak to the app to dictate thoughts and let the AI structure your note (Coming Soon).
 * **Web Clipper**
-  Extract clean note summaries and key findings from webpage URLs (Coming Soon).
+  Extract summaries and key points from webpage links (Coming Soon).
 
 ### Demo Mode
-* **Promotional Notes**
-  Enabling Demo Mode pre-loads 5 styled promotional slates into the database to showcase checklist interactions, export features, and editor formatting.
+* **Sample Notes**
+  Turn on Demo Mode in settings to load 5 pre-made notes that showcase lists, formats, and sharing.
 * **Simulated Tools**
-  Presents simulated tool cards for coming soon features in the Tools tab (Web Clipper, Concept Canvas, Smart Dictation, and Auto-Organizer) and routes all cards to generic preview sheets.
+  Presents mockup cards in the Tools tab for upcoming features.
 
 ---
 
@@ -74,8 +66,8 @@ Slate is a modern, intuitive, and intelligent note-taking application built excl
 
 - Xcode 15.0 or later
 - iOS 17.0 or later
-- A device or simulator with camera permissions enabled (for Smart Lens)
-- Active network connection (for cloud-based selected AI features)
+- Camera permissions enabled (for Smart Lens)
+- Internet connection (for AI features)
 
 ---
 
@@ -91,34 +83,24 @@ Slate is a modern, intuitive, and intelligent note-taking application built excl
    Double-click `Slate.xcodeproj` to open it in Xcode.
 
 3. **Set Up API Keys**:
-   The application communicates with the selected model endpoint using the credentials configured in the settings panel. Enter your API Key securely inside the app Settings.
+   The app connects to your selected AI model using the API key in settings. Enter your key securely in the app Settings screen.
 
 4. **Build and Run**:
-   - Choose a target device (e.g. an iPhone running iOS 17+ or a simulator).
-   - Press `⌘ + R` or click the Play button in Xcode to compile and launch.
+   - Choose a target device (like an iPhone or simulator).
+   - Press `⌘ + R` or click the Play button in Xcode to run.
 
 ---
 
 ## Testing
 
 The project includes test targets to verify core functionality:
-- **SlateTests**: Verifies models, text conversion, and data manipulation.
-- **SlateUITests**: Automated interface tests for note creation and screen flows.
+- **SlateTests**: Tests text formatting and data saving.
+- **SlateUITests**: Tests note creation and screen flows.
 
-Run tests using `⌘ + U` in Xcode or via the Test navigator.
+Run tests using `⌘ + U` in Xcode.
 
 ---
 
 ## License
 
-This project is proprietary and confidential. All rights are reserved by the copyright owner. The Software is source-available solely for personal, educational, and evaluation purposes. 
-
-### Key Restrictions:
-* **No Commercial Use**: Any commercial use, business operations, or integration into proprietary products requires a separate Commercial License.
-* **No SaaS or Cloud Hosting**: Deploying the software to offer its features or APIs as a service (SaaS) to third parties is strictly prohibited.
-* **No Marketplace Publication**: You may not publish or distribute the application on public app marketplaces (such as the Apple App Store).
-* **No AI Training Ingestion**: Utilizing the source code, assets, or design systems for training or fine-tuning artificial intelligence/machine learning models is strictly forbidden.
-* **Corporate & Organizational Exclusion**: Personal/educational evaluation grants do not apply to commercial entities, organizational operations, or internal business testing.
-* **Design Protection**: Replicating or copying the visual design layouts, transitions, or assets of this application is prohibited.
-
-For commercial licensing agreements, custom integrations, or enterprise inquiries, please contact the author.
+This project is licensed under the Slate Proprietary Source-Available and Commercial Restriction License - see the [LICENSE](LICENSE) file for details.
