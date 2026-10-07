@@ -40,7 +40,7 @@ struct ChatView: View {
                     VStack(spacing: 10) {
                         Spacer()
                         
-                        Image(systemName: "apple.intelligence")
+                        Image(systemName: "snowflake")
                             .font(.system(size: 55))
                             .foregroundColor(.primary)
                         

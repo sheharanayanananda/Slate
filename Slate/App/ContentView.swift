@@ -28,7 +28,7 @@ struct ContentView: View {
     var body: some View {
         ZStack {
             TabView(selection: $activeTab) {
-                Tab("Slate", systemImage: "scribble.variable", value: .notes) {
+                Tab("Home", systemImage: "house", value: .notes) {
                     NavigationStack {
                         SlateTabView(
                             onOpenSettings: {
@@ -48,7 +48,7 @@ struct ContentView: View {
                 }
                 .badge(unreadNotesCount > 0 ? Text("\(unreadNotesCount)") : nil)
                 
-                Tab((editingNote == nil || editingNote?.modelContext == nil) ? "New" : "Edit", systemImage: "plus", value: .create) {
+                Tab((editingNote == nil || editingNote?.modelContext == nil) ? "New" : "Edit", systemImage: (editingNote == nil || editingNote?.modelContext == nil) ? "plus" : "pencil", value: .create) {
                     NavigationStack {
                         CreateTabView(
                             editingNote: $editingNote,
@@ -57,7 +57,7 @@ struct ContentView: View {
                     }
                 }
                 
-                Tab("Chat", systemImage: "apple.intelligence", value: .intelligence, role: .search) {
+                Tab("Slate", systemImage: "snowflake", value: .intelligence, role: .search) {
                     Color.clear
                 }
             }

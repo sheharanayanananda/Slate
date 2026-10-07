@@ -104,7 +104,7 @@ struct SlateTabView: View {
                 }
             }
         }
-        .navigationTitle("Slate")
+        .navigationTitle("Home")
         .toolbarTitleDisplayMode(.automatic)
         .toolbar {
             ToolbarItem(placement: .navigation) {
