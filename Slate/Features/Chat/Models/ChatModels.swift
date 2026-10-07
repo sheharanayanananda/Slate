@@ -108,85 +108,98 @@ enum MemoryLimit: Int, Comparable, CaseIterable, Identifiable {
     }
 }
 
-enum ChatPreset: String, CaseIterable, Identifiable, Codable {
-    case slateLite = "Slate Lite"
-    case slateFlash = "Slate Flash"
+enum ChatPreset: String, CaseIterable, Identifiable {
+    case slateFlash    = "Slate Flash"
     case slateCreative = "Slate Creative"
-    case slateScholar = "Slate Scholar"
-    case slateCoder = "Slate Coder"
-    case slatePro = "Slate Pro"
-    
+    case slatePro      = "Slate Pro"
+
+    // MARK: - Codable (resilient — maps retired cases to successors)
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        let raw = try container.decode(String.self)
+        switch raw {
+        case "Slate Flash", "Slate Lite":
+            self = .slateFlash
+        case "Slate Creative":
+            self = .slateCreative
+        case "Slate Pro", "Slate Scholar", "Slate Coder":
+            self = .slatePro
+        default:
+            self = .slateFlash
+        }
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(self.rawValue)
+    }
+
+    // MARK: - Identifiable
+
     var id: String { self.rawValue }
-    
+
+    // MARK: - Display
+
     var title: String { self.rawValue }
-    
+
     var modelTierName: String {
         switch self {
-        case .slateLite: return "Lite"
-        case .slateFlash: return "Flash"
+        case .slateFlash:    return "Flash"
         case .slateCreative: return "Creative"
-        case .slateScholar: return "Scholar"
-        case .slateCoder: return "Coder"
-        case .slatePro: return "Pro"
+        case .slatePro:      return "Pro"
         }
     }
-    
-    var shortName: String {
-        switch self {
-        case .slateLite: return "Slate Lite"
-        case .slateFlash: return "Slate Flash"
-        case .slateCreative: return "Slate Creative"
-        case .slateScholar: return "Slate Scholar"
-        case .slateCoder: return "Slate Coder"
-        case .slatePro: return "Slate Pro"
-        }
-    }
-    
+
+    var shortName: String { self.rawValue }
+
     var subtitle: String {
         switch self {
-        case .slateLite: return "Fast editing, short 4K memory"
-        case .slateFlash: return "Balanced general purpose, standard 8K memory"
-        case .slateCreative: return "Brainstorming and drafting, detailed 16K memory"
-        case .slateScholar: return "Academic research, detailed 16K memory"
-        case .slateCoder: return "Coding expert, high reasoning, 32K memory"
-        case .slatePro: return "Deep reasoning, maximum 32K memory"
+        case .slateFlash:    return "Quick answers, note cleanup, daily tasks"
+        case .slateCreative: return "Brainstorming, writing, ideation"
+        case .slatePro:      return "Deep reasoning, code, math & long docs"
         }
     }
-    
+
+    var iconName: String {
+        switch self {
+        case .slateFlash:    return "bolt.fill"
+        case .slateCreative: return "paintpalette.fill"
+        case .slatePro:      return "brain.head.profile"
+        }
+    }
+
+    // MARK: - AI Configuration
+
     var systemPrompt: String {
         SystemPrompts.chatPresetPrompt(for: self)
     }
-    
+
     var creativity: Double {
         switch self {
-        case .slateLite: return 0.1
-        case .slateFlash: return 0.3
-        case .slateCreative: return 0.8
-        case .slateScholar: return 0.2
-        case .slateCoder: return 0.1
-        case .slatePro: return 0.2
+        case .slateFlash:    return 0.25
+        case .slateCreative: return 0.85
+        case .slatePro:      return 0.15
         }
     }
-    
+
     var memorySize: MemoryLimit {
         switch self {
-        case .slateLite: return .short
-        case .slateFlash: return .standard
-        case .slateCreative: return .detailed
-        case .slateScholar: return .detailed
-        case .slateCoder: return .maximum
-        case .slatePro: return .maximum
+        case .slateFlash:    return .standard  // 8K
+        case .slateCreative: return .detailed  // 16K
+        case .slatePro:      return .maximum   // 32K
         }
     }
-    
+
     var thinkingLevel: String {
         switch self {
-        case .slateLite: return "Low"
-        case .slateFlash: return "Low"
-        case .slateCreative: return "Low"
-        case .slateScholar: return "High"
-        case .slateCoder: return "High"
-        case .slatePro: return "High"
+        case .slateFlash:    return "off"
+        case .slateCreative: return "off"
+        case .slatePro:      return "high"
         }
     }
 }
+
+// MARK: - Codable conformance (satisfies Codable requirement from ChatSession)
+extension ChatPreset: Codable {}
+

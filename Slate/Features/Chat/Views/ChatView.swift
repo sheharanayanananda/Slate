@@ -157,7 +157,17 @@ struct ChatView: View {
                 Menu {
                     Picker("Preset", selection: $chatManager.displayedPreset) {
                         ForEach(ChatPreset.allCases) { preset in
-                            Text(preset.title).tag(preset)
+                            Label {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(preset.title)
+                                    Text(preset.subtitle)
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                            } icon: {
+                                Image(systemName: preset.iconName)
+                            }
+                            .tag(preset)
                         }
                     }
                 } label: {

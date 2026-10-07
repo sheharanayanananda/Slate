@@ -32,7 +32,7 @@ struct CreateTabView: View {
     var body: some View {
         ZStack(alignment: .topLeading) {
             ScrollView {
-                VStack(alignment: .leading, spacing: 0) {
+                VStack(alignment: .leading, spacing: 10) {
                     ForEach($blockItems) { $item in
                         Group {
                             if item.isSpecial {
@@ -177,7 +177,11 @@ extension CreateTabView {
     }
 
     private func handleEditingEnded() {
-        text = NoteBlockUtility.combineBlockItems(blockItems)
+        let combined = NoteBlockUtility.combineBlockItems(blockItems)
+        text = combined
+        withAnimation(.easeInOut(duration: 0.25)) {
+            blockItems = NoteBlockUtility.splitIntoBlockItems(combined)
+        }
     }
 
     private func generateInitialTitle(from text: String) -> String {

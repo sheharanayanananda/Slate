@@ -80,18 +80,18 @@ struct SlateTests {
 
     @Test func testMarkdownHeaders() throws {
         let text = "# Header 1\n## Header 2\n### Header 3\n#NotHeader"
-        let blocks = MarkdownParser.parse(text)
+        let blocks = SlateMarkdownParser.parse(text)
         
         #expect(blocks.count == 4)
         
-        if case .header(let level, let content) = blocks[0] {
+        if case .heading(let level, let content) = blocks[0] {
             #expect(level == 1)
             #expect(content == "Header 1")
         } else {
             #expect(Bool(false), "Expected Header 1 block")
         }
         
-        if case .header(let level, let content) = blocks[1] {
+        if case .heading(let level, let content) = blocks[1] {
             #expect(level == 2)
             #expect(content == "Header 2")
         } else {
@@ -102,6 +102,80 @@ struct SlateTests {
             #expect(content == "#NotHeader")
         } else {
             #expect(Bool(false), "Expected paragraph for #NotHeader")
+        }
+    }
+
+    @Test func testHeadingParsingAndSerialization() throws {
+        let font = UIFont.preferredFont(forTextStyle: .body)
+        let headingMarkdown = "### 1. For a point mass (Linear)"
+        let attr = NativeTextView.parseToAttributed(text: headingMarkdown, font: font)
+        
+        // Ensure visual text does NOT contain ###
+        #expect(!attr.string.contains("###"))
+        #expect(attr.string.contains("1. For a point mass (Linear)"))
+        
+        // Ensure level attribute is present
+        let level = attr.attribute(.slateHeadingLevel, at: 0, effectiveRange: nil) as? Int
+        #expect(level == 3)
+        
+        // Ensure serialized text restores ### without unwanted asterisks
+        let serialized = NativeTextView.serializeToString(attributed: attr)
+        #expect(serialized == headingMarkdown)
+    }
+
+    @Test func testInlineMathAndGreekParsing() throws {
+        let font = UIFont.preferredFont(forTextStyle: .body)
+        let mathMarkdown = "- $L$: Angular momentum\n- $\\theta$: Angle between the radius and velocity vectors"
+        let attr = NativeTextView.parseToAttributed(text: mathMarkdown, font: font)
+        
+        // Visually should contain Greek glyph and not raw LaTeX or dollar signs
+        #expect(attr.string.contains("θ"))
+        #expect(!attr.string.contains("$\\theta$"))
+        #expect(!attr.string.contains("$L$"))
+        
+        // Serialization should faithfully restore $L$ and $\theta$
+        let serialized = NativeTextView.serializeToString(attributed: attr)
+        #expect(serialized.contains("$L$: Angular momentum"))
+        #expect(serialized.contains("$\\theta$: Angle between the radius and velocity vectors"))
+    }
+
+    @Test func testInlineCodeParsing() throws {
+        let font = UIFont.preferredFont(forTextStyle: .body)
+        let codeMarkdown = "Use `let x = 10` in Swift"
+        let attr = NativeTextView.parseToAttributed(text: codeMarkdown, font: font)
+        
+        #expect(attr.string == "Use let x = 10 in Swift")
+        let serialized = NativeTextView.serializeToString(attributed: attr)
+        #expect(serialized == codeMarkdown)
+    }
+
+    @Test @MainActor func testSlateTextViewRendering() throws {
+        let noteText = """
+        # My Note
+        Here is some text with **bold** and *italic*.
+        - [ ] First task
+        - [x] Second task
+        - Bullet point
+        1. Numbered item
+        """
+        let blocks = NoteBlockUtility.splitIntoBlockItems(noteText)
+        #expect(!blocks.isEmpty)
+        for item in blocks {
+            if !item.isSpecial {
+                let textView = SlateTextView()
+                let font = UIFont.preferredFont(forTextStyle: .body)
+                let attr = NativeTextView.parseToAttributed(text: item.rawText, font: font)
+                textView.attributedText = attr
+                
+                let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 375, height: 667))
+                window.addSubview(textView)
+                textView.frame = CGRect(x: 0, y: 0, width: 375, height: 100)
+                textView.setNeedsLayout()
+                textView.layoutIfNeeded()
+                
+                let size = textView.sizeThatFits(CGSize(width: 375, height: CGFloat.greatestFiniteMagnitude))
+                #expect(size.height > 0)
+            }
         }
     }
 }

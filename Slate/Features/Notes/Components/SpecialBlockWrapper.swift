@@ -82,18 +82,24 @@ struct SpecialBlockWrapper<Content: View>: View {
                 .frame(width: 1, height: 1)
             
             content
-                .contentShape(Rectangle())
-                .onTapGesture {
-                    let generator = UIImpactFeedbackGenerator(style: .light)
-                    generator.impactOccurred()
-                    onTap()
-                }
-                .padding(4)
-                .background(isSelected ? Color.blue.opacity(0.12) : Color.clear)
-                .cornerRadius(8)
+                .allowsHitTesting(false)
+                .padding(6)
+                .background(
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .fill(isSelected ? Color.blue.opacity(0.12) : Color.clear)
+                )
                 .overlay(
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(isSelected ? Color.blue.opacity(0.5) : Color.clear, lineWidth: 1.5)
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .stroke(isSelected ? Color.blue.opacity(0.55) : Color.clear, lineWidth: 1.5)
+                )
+                .overlay(
+                    Color.clear
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            let generator = UIImpactFeedbackGenerator(style: .light)
+                            generator.impactOccurred()
+                            onTap()
+                        }
                 )
         }
         .padding(.vertical, 4)

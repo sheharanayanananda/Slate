@@ -6,7 +6,102 @@
 import SwiftUI
 import UIKit
 
-// MARK: - SwiftUI Keyboard Toolbar
+extension NSTextContainer {
+    var textStorage: NSTextStorage? {
+        if let lm = self.layoutManager {
+            return lm.textStorage
+        }
+        if let tlm = self.textLayoutManager,
+           let tcs = tlm.textContentManager as? NSTextContentStorage {
+            return tcs.textStorage
+        }
+        return nil
+    }
+}
+
+extension NSAttributedString.Key {
+    static let slateHeadingLevel = NSAttributedString.Key("SlateHeadingLevel")
+    static let slateMathOriginal = NSAttributedString.Key("SlateMathOriginal")
+    static let slateInlineCode = NSAttributedString.Key("SlateInlineCode")
+}
+
+fileprivate extension UIFont {
+    func withBold() -> UIFont {
+        var traits = fontDescriptor.symbolicTraits
+        traits.insert(.traitBold)
+        if let descriptor = fontDescriptor.withSymbolicTraits(traits) {
+            return UIFont(descriptor: descriptor, size: pointSize)
+        }
+        return self
+    }
+    
+    func withItalic() -> UIFont {
+        var traits = fontDescriptor.symbolicTraits
+        traits.insert(.traitItalic)
+        if let descriptor = fontDescriptor.withSymbolicTraits(traits) {
+            return UIFont(descriptor: descriptor, size: pointSize)
+        }
+        return self
+    }
+    
+    var isBold: Bool {
+        return fontDescriptor.symbolicTraits.contains(.traitBold)
+    }
+    
+    var isItalic: Bool {
+        return fontDescriptor.symbolicTraits.contains(.traitItalic)
+    }
+}
+
+class CheckboxAttachment: NSTextAttachment {
+    var isChecked: Bool
+    
+    init(isChecked: Bool) {
+        self.isChecked = isChecked
+        super.init(data: nil, ofType: nil)
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    override func image(forBounds imageBounds: CGRect, textContainer: NSTextContainer?, characterIndex charIndex: Int) -> UIImage? {
+        guard let textStorage = textContainer?.textStorage else { return nil }
+        
+        let font: UIFont
+        var range = NSRange(location: 0, length: 0)
+        if charIndex < textStorage.length,
+           let f = textStorage.attribute(NSAttributedString.Key.font, at: charIndex, effectiveRange: &range) as? UIFont {
+            font = f
+        } else {
+            font = UIFont.preferredFont(forTextStyle: .body)
+        }
+        
+        let config = UIImage.SymbolConfiguration(font: font)
+        let systemName = isChecked ? "checkmark.circle.fill" : "circle"
+        let color = isChecked ? UIColor.systemBlue : UIColor.tertiaryLabel
+        return UIImage(systemName: systemName, withConfiguration: config)?.withTintColor(color, renderingMode: .alwaysOriginal)
+    }
+    
+    override func attachmentBounds(for textContainer: NSTextContainer?, proposedLineFragment lineFrag: CGRect, glyphPosition position: CGPoint, characterIndex charIndex: Int) -> CGRect {
+        guard let textStorage = textContainer?.textStorage else {
+            return CGRect(x: 0, y: -4, width: 22, height: 22)
+        }
+        
+        let font: UIFont
+        var range = NSRange(location: 0, length: 0)
+        if charIndex < textStorage.length,
+           let f = textStorage.attribute(NSAttributedString.Key.font, at: charIndex, effectiveRange: &range) as? UIFont {
+            font = f
+        } else {
+            font = UIFont.preferredFont(forTextStyle: .body)
+        }
+        
+        let size = font.lineHeight
+        let yOffset = (font.capHeight - size) / 2
+        return CGRect(x: 0, y: yOffset, width: size, height: size)
+    }
+}
 
 struct NativeKeyboardToolbar: View {
     var onToggleChecklist: () -> Void
@@ -120,20 +215,30 @@ struct NativeKeyboardToolbar: View {
     }
 }
 
-// MARK: - SlateTextView Subclass
-
 class SlateTextView: UITextView {
     var isLayoutUpdating = false
     
+    init() {
+        let textStorage = NSTextStorage()
+        let layoutManager = NSLayoutManager()
+        textStorage.addLayoutManager(layoutManager)
+        let textContainer = NSTextContainer(size: .zero)
+        textContainer.widthTracksTextView = true
+        layoutManager.addTextContainer(textContainer)
+        super.init(frame: .zero, textContainer: textContainer)
+    }
+    
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+    }
+    
     override func caretRect(for position: UITextPosition) -> CGRect {
         if isLayoutUpdating {
-            return CGRect(x: 0, y: 0, width: 2, height: UIFont.preferredFont(forTextStyle: .body).lineHeight)
+            return CGRect(x: 0, y: 0, width: 2, height: (font ?? UIFont.preferredFont(forTextStyle: .body)).lineHeight)
         }
         return super.caretRect(for: position)
     }
 }
-
-// MARK: - Native TextView Wrapper
 
 struct NativeTextView: UIViewRepresentable {
     let id: UUID
@@ -151,7 +256,9 @@ struct NativeTextView: UIViewRepresentable {
         
         textView.backgroundColor = .clear
         textView.isScrollEnabled = false
-        textView.font = UIFont.preferredFont(forTextStyle: .body)
+        
+        let bodyFont = UIFont.preferredFont(forTextStyle: .body)
+        textView.font = bodyFont
         textView.textColor = UIColor.label
         
         let defaultParagraphStyle = NSMutableParagraphStyle()
@@ -159,7 +266,7 @@ struct NativeTextView: UIViewRepresentable {
         defaultParagraphStyle.paragraphSpacing = 8
         
         textView.typingAttributes = [
-            .font: UIFont.preferredFont(forTextStyle: .body),
+            .font: bodyFont,
             .foregroundColor: UIColor.label,
             .paragraphStyle: defaultParagraphStyle
         ]
@@ -171,18 +278,37 @@ struct NativeTextView: UIViewRepresentable {
         textView.textContainer.lineFragmentPadding = 0
         textView.textContainer.widthTracksTextView = true
         
-        // Build and host the custom SwiftUI toolbar accessory view
         let accessoryView = NativeKeyboardToolbar(
-            onToggleChecklist: { context.coordinator.toggleChecklistAction() },
-            onToggleBulletList: { context.coordinator.toggleBulletListAction() },
-            onToggleNumberedList: { context.coordinator.toggleNumberedListAction() },
-            onToggleBold: { context.coordinator.toggleBoldAction() },
-            onToggleItalic: { context.coordinator.toggleItalicAction() },
-            onToggleUnderline: { context.coordinator.toggleUnderlineAction() },
-            onToggleStrikethrough: { context.coordinator.toggleStrikethroughAction() },
-            onDecreaseIndent: { context.coordinator.decreaseIndentAction() },
-            onIncreaseIndent: { context.coordinator.increaseIndentAction() },
-            onDismissKeyboard: { [weak textView] in textView?.resignFirstResponder() }
+            onToggleChecklist: {
+                context.coordinator.toggleChecklistAction()
+            },
+            onToggleBulletList: {
+                context.coordinator.toggleBulletListAction()
+            },
+            onToggleNumberedList: {
+                context.coordinator.toggleNumberedListAction()
+            },
+            onToggleBold: {
+                context.coordinator.toggleBoldAction()
+            },
+            onToggleItalic: {
+                context.coordinator.toggleItalicAction()
+            },
+            onToggleUnderline: {
+                context.coordinator.toggleUnderlineAction()
+            },
+            onToggleStrikethrough: {
+                context.coordinator.toggleStrikethroughAction()
+            },
+            onDecreaseIndent: {
+                context.coordinator.decreaseIndentAction()
+            },
+            onIncreaseIndent: {
+                context.coordinator.increaseIndentAction()
+            },
+            onDismissKeyboard: { [weak textView] in
+                textView?.resignFirstResponder()
+            }
         )
         
         let hostingController = UIHostingController(rootView: accessoryView)
@@ -191,15 +317,58 @@ struct NativeTextView: UIViewRepresentable {
         hostingController.view.backgroundColor = .clear
         
         textView.inputAccessoryView = hostingController.view
+        
+        // Tap gesture ONLY for toggling checklists directly when tapped on visual checkbox
+        let tapGesture = UITapGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handleTap(_:)))
+        tapGesture.delegate = context.coordinator
+        textView.addGestureRecognizer(tapGesture)
+        
+        if !text.isEmpty {
+            let attr = NativeTextView.parseToAttributed(text: text, font: bodyFont)
+            textView.attributedText = attr
+            context.coordinator.lastParsedText = text
+        }
+        
         return textView
     }
     
     func updateUIView(_ uiView: UITextView, context: Context) {
+        let slateTextView = uiView as? SlateTextView
+        
         if context.coordinator.lastParsedText != text && !context.coordinator.isUpdating {
+            let font = UIFont.preferredFont(forTextStyle: .body)
+            let attr = NativeTextView.parseToAttributed(text: text, font: font)
+            
+            slateTextView?.isLayoutUpdating = true
             context.coordinator.isUpdating = true
-            uiView.text = text
-            context.coordinator.lastParsedText = text
+            uiView.attributedText = attr
             context.coordinator.isUpdating = false
+            
+            uiView.font = font
+            
+            let defaultParagraphStyle = NSMutableParagraphStyle()
+            defaultParagraphStyle.lineSpacing = 3.0
+            defaultParagraphStyle.paragraphSpacing = 8
+            
+            uiView.typingAttributes = [
+                .font: font,
+                .foregroundColor: UIColor.label,
+                .paragraphStyle: defaultParagraphStyle
+            ]
+            
+            if uiView.isFirstResponder {
+                let length = uiView.attributedText.length
+                let selectedRange = uiView.selectedRange
+                if selectedRange.location <= length {
+                    let maxLen = min(selectedRange.length, length - selectedRange.location)
+                    uiView.selectedRange = NSRange(location: selectedRange.location, length: maxLen)
+                } else {
+                    uiView.selectedRange = NSRange(location: length, length: 0)
+                }
+            }
+            
+            context.coordinator.lastParsedText = text
+            slateTextView?.isLayoutUpdating = false
         }
         
         if focusedBlockID == id {
@@ -207,7 +376,7 @@ struct NativeTextView: UIViewRepresentable {
                 uiView.becomeFirstResponder()
             }
             if let pos = cursorPosition {
-                let safePos = min(max(0, pos), uiView.text.count)
+                let safePos = min(max(0, pos), uiView.attributedText.length)
                 uiView.selectedRange = NSRange(location: safePos, length: 0)
                 DispatchQueue.main.async {
                     self.cursorPosition = nil
@@ -217,7 +386,7 @@ struct NativeTextView: UIViewRepresentable {
     }
     
     func sizeThatFits(_ proposal: ProposedViewSize, uiView: UITextView, context: Context) -> CGSize? {
-        let width = proposal.width ?? UIScreen.main.bounds.width
+        let width = proposal.width ?? 375
         let size = uiView.sizeThatFits(CGSize(width: width, height: .infinity))
         return CGSize(width: width, height: max(size.height, 24))
     }
@@ -226,7 +395,403 @@ struct NativeTextView: UIViewRepresentable {
         Coordinator(self)
     }
     
-    class Coordinator: NSObject, UITextViewDelegate {
+    private static func getIndentLevel(from line: String) -> Int {
+        var spaceCount = 0
+        for char in line {
+            if char == " " {
+                spaceCount += 1
+            } else if char == "\t" {
+                spaceCount += 2
+            } else {
+                break
+            }
+        }
+        return spaceCount / 2
+    }
+    
+    private static func stripIndent(from line: String, level: Int) -> String {
+        return String(line.dropFirst(level * 2))
+    }
+    
+    private static let latexSymbolMap: [String: String] = [
+        // Lowercase Greek
+        "\\alpha": "α", "\\beta": "β", "\\gamma": "γ", "\\delta": "δ", "\\epsilon": "ε",
+        "\\varepsilon": "ε", "\\zeta": "ζ", "\\eta": "η", "\\theta": "θ", "\\vartheta": "θ",
+        "\\iota": "ι", "\\kappa": "κ", "\\lambda": "λ", "\\mu": "μ", "\\nu": "ν",
+        "\\xi": "ξ", "\\pi": "π", "\\varpi": "ϖ", "\\rho": "ρ", "\\varrho": "ϱ",
+        "\\sigma": "σ", "\\varsigma": "ς", "\\tau": "τ", "\\upsilon": "υ", "\\phi": "φ",
+        "\\varphi": "ϕ", "\\chi": "χ", "\\psi": "ψ", "\\omega": "ω",
+        // Uppercase Greek
+        "\\Gamma": "Γ", "\\Delta": "Δ", "\\Theta": "Θ", "\\Lambda": "Λ", "\\Xi": "Ξ",
+        "\\Pi": "Π", "\\Sigma": "Σ", "\\Upsilon": "Υ", "\\Phi": "Φ", "\\Psi": "Ψ", "\\Omega": "Ω",
+        // Math symbols & operators
+        "\\times": "×", "\\cdot": "·", "\\div": "÷", "\\pm": "±", "\\mp": "∓",
+        "\\le": "≤", "\\leq": "≤", "\\ge": "≥", "\\geq": "≥", "\\ne": "≠", "\\neq": "≠",
+        "\\approx": "≈", "\\sim": "∼", "\\equiv": "≡", "\\propto": "∝",
+        "\\infty": "∞", "\\partial": "∂", "\\nabla": "∇",
+        "\\in": "∈", "\\notin": "∉", "\\subset": "⊂", "\\subseteq": "⊆",
+        "\\cup": "∪", "\\cap": "∩", "\\to": "→", "\\rightarrow": "→", "\\leftarrow": "←",
+        "\\leftrightarrow": "↔", "\\implies": "⇒", "\\iff": "⇔",
+        "\\sum": "∑", "\\prod": "∏", "\\int": "∫", "\\sqrt": "√"
+    ]
+    
+    static func parseInlineMarkdown(_ text: String, font: UIFont) -> NSAttributedString {
+        let attrString = NSMutableAttributedString(string: text)
+        let defaultAttributes: [NSAttributedString.Key: Any] = [
+            .font: font,
+            .foregroundColor: UIColor.label
+        ]
+        attrString.addAttributes(defaultAttributes, range: NSRange(location: 0, length: attrString.length))
+        
+        // 1. Inline code: `code`
+        parseAndReplaceTag(attrString, pattern: #"`([^`\n]+)`"#, font: font) { mutableContent, range, _ in
+            let monoFont = UIFont.monospacedSystemFont(ofSize: font.pointSize * 0.9, weight: .regular)
+            mutableContent.addAttribute(.font, value: monoFont, range: range)
+            mutableContent.addAttribute(.backgroundColor, value: UIColor.secondarySystemFill, range: range)
+            mutableContent.addAttribute(.slateInlineCode, value: true, range: range)
+        }
+        
+        // 2. Inline math / LaTeX variables: $math$
+        let mathRegex = try! NSRegularExpression(pattern: #"\\?(?<!\$)\$(?!\s)(.+?)(?<!\s)\$(?!\$)"#, options: [])
+        var mathMatchFound = true
+        while mathMatchFound {
+            let fullRange = NSRange(location: 0, length: attrString.length)
+            if let match = mathRegex.firstMatch(in: attrString.string, options: [], range: fullRange) {
+                let tagRange = match.range(at: 0)
+                let contentRange = match.range(at: 1)
+                
+                let originalMath = (attrString.string as NSString).substring(with: tagRange)
+                let innerMath = (attrString.string as NSString).substring(with: contentRange)
+                
+                // Replace LaTeX symbols with Unicode equivalents
+                var converted = innerMath
+                for (latexCmd, unicodeChar) in latexSymbolMap {
+                    converted = converted.replacingOccurrences(of: latexCmd, with: unicodeChar)
+                }
+                
+                let mathAttr = NSMutableAttributedString(string: converted)
+                let mathRange = NSRange(location: 0, length: mathAttr.length)
+                mathAttr.addAttribute(.font, value: font.withItalic(), range: mathRange)
+                mathAttr.addAttribute(.foregroundColor, value: UIColor.label, range: mathRange)
+                mathAttr.addAttribute(.slateMathOriginal, value: originalMath, range: mathRange)
+                
+                attrString.replaceCharacters(in: tagRange, with: mathAttr)
+            } else {
+                mathMatchFound = false
+            }
+        }
+        
+        // 3. Parse and format tags
+        parseAndReplaceTag(attrString, pattern: #"<u>(.*?)</u>"#, font: font) { mutableContent, range, _ in
+            mutableContent.addAttribute(.underlineStyle, value: NSUnderlineStyle.single.rawValue, range: range)
+        }
+        
+        parseAndReplaceTag(attrString, pattern: #"~~(.*?)~~"#, font: font) { mutableContent, range, _ in
+            mutableContent.addAttribute(.strikethroughStyle, value: NSUnderlineStyle.single.rawValue, range: range)
+        }
+        
+        parseAndReplaceTag(attrString, pattern: #"\*\*(.*?)\*\*"#, font: font) { mutableContent, range, _ in
+            mutableContent.enumerateAttribute(.font, in: range, options: []) { value, subRange, _ in
+                if let currentFont = value as? UIFont {
+                    mutableContent.addAttribute(.font, value: currentFont.withBold(), range: subRange)
+                }
+            }
+        }
+        
+        parseAndReplaceTag(attrString, pattern: #"\*(.*?)\*"#, font: font) { mutableContent, range, _ in
+            mutableContent.enumerateAttribute(.font, in: range, options: []) { value, subRange, _ in
+                if let currentFont = value as? UIFont {
+                    mutableContent.addAttribute(.font, value: currentFont.withItalic(), range: subRange)
+                }
+            }
+        }
+        
+        return attrString
+    }
+    
+    private static func parseAndReplaceTag(
+        _ attrString: NSMutableAttributedString,
+        pattern: String,
+        font: UIFont,
+        applyFormatting: (NSMutableAttributedString, NSRange, String) -> Void
+    ) {
+        let regex = try! NSRegularExpression(pattern: pattern, options: [])
+        
+        var matchFound = true
+        while matchFound {
+            let range = NSRange(location: 0, length: attrString.length)
+            if let match = regex.firstMatch(in: attrString.string, options: [], range: range) {
+                let tagRange = match.range(at: 0)
+                let contentRange = match.range(at: 1)
+                
+                let contentAttrString = attrString.attributedSubstring(from: contentRange)
+                let mutableContent = NSMutableAttributedString(attributedString: contentAttrString)
+                
+                guard tagRange.length > 0 else {
+                    matchFound = false
+                    break
+                }
+                
+                guard mutableContent.length > 0 else {
+                    attrString.replaceCharacters(in: tagRange, with: mutableContent)
+                    continue
+                }
+                
+                let newRange = NSRange(location: 0, length: mutableContent.length)
+                applyFormatting(mutableContent, newRange, mutableContent.string)
+                
+                attrString.replaceCharacters(in: tagRange, with: mutableContent)
+            } else {
+                matchFound = false
+            }
+        }
+    }
+    
+    static func parseToAttributed(text: String, font: UIFont) -> NSAttributedString {
+        let result = NSMutableAttributedString()
+        let sanitizedText = text.replacingOccurrences(of: "\r", with: "")
+        let lines = sanitizedText.components(separatedBy: "\n")
+        
+        for (index, line) in lines.enumerated() {
+            let level = getIndentLevel(from: line)
+            let strippedLine = stripIndent(from: line, level: level)
+            let indentOffset = CGFloat(level * 24)
+            
+            let checklistParagraphStyle = NSMutableParagraphStyle()
+            checklistParagraphStyle.headIndent = indentOffset + 32
+            checklistParagraphStyle.firstLineHeadIndent = indentOffset
+            checklistParagraphStyle.paragraphSpacing = 8
+            
+            let bulletParagraphStyle = NSMutableParagraphStyle()
+            bulletParagraphStyle.headIndent = indentOffset + 16
+            bulletParagraphStyle.firstLineHeadIndent = indentOffset
+            bulletParagraphStyle.paragraphSpacing = 8
+            
+            let numberedParagraphStyle = NSMutableParagraphStyle()
+            numberedParagraphStyle.headIndent = indentOffset + 20
+            numberedParagraphStyle.firstLineHeadIndent = indentOffset
+            numberedParagraphStyle.paragraphSpacing = 8
+            
+            let normalParagraphStyle = NSMutableParagraphStyle()
+            normalParagraphStyle.headIndent = indentOffset
+            normalParagraphStyle.firstLineHeadIndent = indentOffset
+            normalParagraphStyle.paragraphSpacing = 8
+            
+            var lineParagraphStyle: NSMutableParagraphStyle = normalParagraphStyle
+            var lineFont: UIFont = font
+            
+            // Check for Headings: # through ######
+            if let headingMatch = strippedLine.range(of: #"^(#{1,6})\s+"#, options: .regularExpression) {
+                let hashes = strippedLine[headingMatch].trimmingCharacters(in: .whitespaces)
+                let headingLevel = hashes.count
+                let headingText = String(strippedLine[headingMatch.upperBound...])
+                
+                let headingFont: UIFont
+                switch headingLevel {
+                case 1: headingFont = UIFont.preferredFont(forTextStyle: .title1).withBold()
+                case 2: headingFont = UIFont.preferredFont(forTextStyle: .title2).withBold()
+                case 3: headingFont = UIFont.preferredFont(forTextStyle: .title3).withBold()
+                case 4: headingFont = UIFont.preferredFont(forTextStyle: .headline).withBold()
+                case 5: headingFont = UIFont.preferredFont(forTextStyle: .subheadline).withBold()
+                default: headingFont = UIFont.preferredFont(forTextStyle: .footnote).withBold()
+                }
+                
+                let headingParaStyle = NSMutableParagraphStyle()
+                headingParaStyle.paragraphSpacingBefore = headingLevel == 1 ? 16 : (headingLevel == 2 ? 12 : 8)
+                headingParaStyle.paragraphSpacing = headingLevel == 1 ? 6 : (headingLevel == 2 ? 4 : 2)
+                headingParaStyle.lineSpacing = 2.0
+                
+                let contentAttr = parseInlineMarkdown(headingText, font: headingFont)
+                let attrString = NSMutableAttributedString(attributedString: contentAttr)
+                attrString.addAttribute(.paragraphStyle, value: headingParaStyle, range: NSRange(location: 0, length: attrString.length))
+                attrString.addAttribute(.slateHeadingLevel, value: headingLevel, range: NSRange(location: 0, length: attrString.length))
+                
+                lineParagraphStyle = headingParaStyle
+                lineFont = headingFont
+                result.append(attrString)
+            } else if strippedLine.hasPrefix("- [ ] ") {
+                let attachment = CheckboxAttachment(isChecked: false)
+                let attrString = NSMutableAttributedString(attachment: attachment)
+                let contentText = String(strippedLine.dropFirst(6))
+                let contentAttr = parseInlineMarkdown(" " + contentText, font: font)
+                attrString.append(contentAttr)
+                
+                attrString.addAttribute(.paragraphStyle, value: checklistParagraphStyle, range: NSRange(location: 0, length: attrString.length))
+                attrString.addAttributes([.font: font, .foregroundColor: UIColor.label], range: NSRange(location: 0, length: 2))
+                
+                lineParagraphStyle = checklistParagraphStyle
+                result.append(attrString)
+            } else if strippedLine.hasPrefix("- [x] ") {
+                let attachment = CheckboxAttachment(isChecked: true)
+                let attrString = NSMutableAttributedString(attachment: attachment)
+                let contentText = String(strippedLine.dropFirst(6))
+                let contentAttr = parseInlineMarkdown(" " + contentText, font: font)
+                
+                let mutableContent = NSMutableAttributedString(attributedString: contentAttr)
+                let textRange = NSRange(location: 0, length: mutableContent.length)
+                mutableContent.addAttribute(.strikethroughStyle, value: NSUnderlineStyle.single.rawValue, range: textRange)
+                mutableContent.addAttribute(.foregroundColor, value: UIColor.secondaryLabel, range: textRange)
+                
+                attrString.append(mutableContent)
+                
+                attrString.addAttribute(.paragraphStyle, value: checklistParagraphStyle, range: NSRange(location: 0, length: attrString.length))
+                attrString.addAttributes([.font: font, .foregroundColor: UIColor.label], range: NSRange(location: 0, length: 2))
+                
+                lineParagraphStyle = checklistParagraphStyle
+                result.append(attrString)
+            } else if strippedLine.hasPrefix("- ") || strippedLine.hasPrefix("• ") {
+                let contentText = String(strippedLine.dropFirst(2))
+                let contentAttr = parseInlineMarkdown(contentText, font: font)
+                let attrString = NSMutableAttributedString(string: "• ")
+                attrString.append(contentAttr)
+                
+                attrString.addAttribute(.paragraphStyle, value: bulletParagraphStyle, range: NSRange(location: 0, length: attrString.length))
+                attrString.addAttributes([.font: font, .foregroundColor: UIColor.label], range: NSRange(location: 0, length: 2))
+                
+                lineParagraphStyle = bulletParagraphStyle
+                result.append(attrString)
+            } else if let numberMatch = strippedLine.range(of: #"^\d+\.\s"#, options: .regularExpression) {
+                let prefix = String(strippedLine[numberMatch])
+                let contentText = String(strippedLine[numberMatch.upperBound...])
+                let contentAttr = parseInlineMarkdown(contentText, font: font)
+                let attrString = NSMutableAttributedString(string: prefix)
+                attrString.append(contentAttr)
+                
+                attrString.addAttribute(.paragraphStyle, value: numberedParagraphStyle, range: NSRange(location: 0, length: attrString.length))
+                attrString.addAttributes([.font: font, .foregroundColor: UIColor.label], range: NSRange(location: 0, length: prefix.count))
+                
+                lineParagraphStyle = numberedParagraphStyle
+                result.append(attrString)
+            } else {
+                let contentAttr = parseInlineMarkdown(strippedLine, font: font)
+                let attrString = NSMutableAttributedString(attributedString: contentAttr)
+                
+                attrString.addAttribute(.paragraphStyle, value: normalParagraphStyle, range: NSRange(location: 0, length: attrString.length))
+                
+                lineParagraphStyle = normalParagraphStyle
+                result.append(attrString)
+            }
+            
+            if index < lines.count - 1 {
+                let newlineAttrs: [NSAttributedString.Key: Any] = [
+                    .paragraphStyle: lineParagraphStyle,
+                    .font: lineFont,
+                    .foregroundColor: UIColor.label
+                ]
+                result.append(NSAttributedString(string: "\n", attributes: newlineAttrs))
+            }
+        }
+        
+        return result
+    }
+    
+    static func serializeToString(attributed: NSAttributedString) -> String {
+        var result = ""
+        let string = attributed.string as NSString
+        
+        attributed.enumerateAttributes(in: NSRange(location: 0, length: attributed.length), options: []) { attrs, range, _ in
+            if let attachment = attrs[.attachment] as? CheckboxAttachment {
+                result += attachment.isChecked ? "- [x]" : "- [ ]"
+            } else if let originalMath = attrs[.slateMathOriginal] as? String {
+                result += originalMath
+            } else if attrs[.slateInlineCode] != nil {
+                let substring = string.substring(with: range)
+                let cleaned = substring.replacingOccurrences(of: "\u{FFFC}", with: "")
+                result += "`" + cleaned + "`"
+            } else {
+                let substring = string.substring(with: range)
+                let cleaned = substring.replacingOccurrences(of: "\u{FFFC}", with: "")
+                
+                var prefix = ""
+                var suffix = ""
+                
+                let isHeading = attrs[.slateHeadingLevel] != nil
+                if !isHeading {
+                    if let font = attrs[.font] as? UIFont {
+                        if font.isBold {
+                            prefix += "**"
+                            suffix = "**" + suffix
+                        }
+                        if font.isItalic {
+                            prefix += "*"
+                            suffix = "*" + suffix
+                        }
+                    }
+                }
+                
+                if let underline = attrs[.underlineStyle] as? Int, underline > 0 {
+                    prefix += "<u>"
+                    suffix = "</u>" + suffix
+                }
+                
+                if let strikethrough = attrs[.strikethroughStyle] as? Int, strikethrough > 0 {
+                    var isChecklistStrikethrough = false
+                    let lineRange = string.lineRange(for: range)
+                    if lineRange.length > 0 {
+                        var optRange = NSRange(location: 0, length: 0)
+                        if let firstAttr = attributed.attribute(.attachment, at: lineRange.location, effectiveRange: &optRange) as? CheckboxAttachment {
+                            if firstAttr.isChecked {
+                                isChecklistStrikethrough = true
+                            }
+                        }
+                    }
+                    
+                    if !isChecklistStrikethrough {
+                        prefix += "~~"
+                        suffix = "~~" + suffix
+                    }
+                }
+                
+                result += prefix + cleaned + suffix
+            }
+        }
+        
+        var lines = result.components(separatedBy: "\n")
+        for i in 0..<lines.count {
+            let lineStart = findLineStartInAttributed(attributed, lineIndex: i)
+            if lineStart < attributed.length {
+                var optRange = NSRange(location: 0, length: 0)
+                if let headingLevel = attributed.attribute(.slateHeadingLevel, at: lineStart, effectiveRange: &optRange) as? Int {
+                    let hashes = String(repeating: "#", count: headingLevel)
+                    lines[i] = "\(hashes) \(lines[i])"
+                } else if let paraStyle = attributed.attribute(.paragraphStyle, at: lineStart, effectiveRange: &optRange) as? NSParagraphStyle {
+                    let level = Int(paraStyle.firstLineHeadIndent / 24)
+                    if level > 0 {
+                        let spaces = String(repeating: " ", count: level * 2)
+                        lines[i] = spaces + lines[i]
+                    }
+                }
+            }
+            
+            let trimmed = lines[i].trimmingCharacters(in: .whitespaces)
+            if trimmed.hasPrefix("• ") {
+                if let bulletRange = lines[i].range(of: "• ") {
+                    lines[i] = lines[i].replacingCharacters(in: bulletRange, with: "- ")
+                }
+            }
+        }
+        
+        return lines.joined(separator: "\n")
+    }
+    
+    private static func findLineStartInAttributed(_ attrString: NSAttributedString, lineIndex: Int) -> Int {
+        let string = attrString.string as NSString
+        var currentLineIndex = 0
+        var currentIndex = 0
+        
+        while currentIndex < string.length {
+            let lineRange = string.lineRange(for: NSRange(location: currentIndex, length: 0))
+            if currentLineIndex == lineIndex {
+                return lineRange.location
+            }
+            currentIndex = lineRange.location + lineRange.length
+            currentLineIndex += 1
+        }
+        
+        return string.length
+    }
+    
+    class Coordinator: NSObject, UITextViewDelegate, UIGestureRecognizerDelegate {
         var parent: NativeTextView
         weak var textView: UITextView?
         var lastParsedText: String = ""
@@ -236,10 +801,551 @@ struct NativeTextView: UIViewRepresentable {
             self.parent = parent
         }
         
+        // MARK: - UIGestureRecognizerDelegate
+        
+        func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+            guard let textView = textView else { return false }
+            
+            let location = touch.location(in: textView)
+            let adjustedLocation = CGPoint(x: location.x - textView.textContainerInset.left,
+                                           y: location.y - textView.textContainerInset.top)
+            
+            let layoutManager = textView.layoutManager
+            let characterIndex = layoutManager.characterIndex(for: adjustedLocation, in: textView.textContainer, fractionOfDistanceBetweenInsertionPoints: nil)
+            
+            guard characterIndex < textView.textStorage.length else { return false }
+            
+            let glyphRange = layoutManager.glyphRange(forCharacterRange: NSRange(location: characterIndex, length: 1), actualCharacterRange: nil)
+            let boundingRect = layoutManager.boundingRect(forGlyphRange: glyphRange, in: textView.textContainer)
+            
+            let expandedRect = boundingRect.insetBy(dx: -10, dy: -10)
+            
+            if expandedRect.contains(adjustedLocation) {
+                let attribute = textView.textStorage.attribute(NSAttributedString.Key.attachment, at: characterIndex, effectiveRange: nil)
+                if attribute is CheckboxAttachment {
+                    return true
+                }
+            }
+            
+            return false
+        }
+        
+        @objc func handleTap(_ gesture: UITapGestureRecognizer) {
+            guard let textView = textView else { return }
+            
+            let location = gesture.location(in: textView)
+            let adjustedLocation = CGPoint(x: location.x - textView.textContainerInset.left,
+                                           y: location.y - textView.textContainerInset.top)
+            
+            let layoutManager = textView.layoutManager
+            let characterIndex = layoutManager.characterIndex(for: adjustedLocation, in: textView.textContainer, fractionOfDistanceBetweenInsertionPoints: nil)
+            
+            guard characterIndex < textView.textStorage.length else { return }
+            
+            let glyphRange = layoutManager.glyphRange(forCharacterRange: NSRange(location: characterIndex, length: 1), actualCharacterRange: nil)
+            let boundingRect = layoutManager.boundingRect(forGlyphRange: glyphRange, in: textView.textContainer)
+            
+            let expandedRect = boundingRect.insetBy(dx: -10, dy: -10)
+            
+            if expandedRect.contains(adjustedLocation) {
+                if let attachment = textView.textStorage.attribute(NSAttributedString.Key.attachment, at: characterIndex, effectiveRange: nil) as? CheckboxAttachment {
+                    toggleCheckbox(at: characterIndex, in: textView, currentAttachment: attachment)
+                }
+            }
+        }
+        
+        private func toggleCheckbox(at index: Int, in textView: UITextView, currentAttachment: CheckboxAttachment) {
+            let isChecked = !currentAttachment.isChecked
+            let newAttachment = CheckboxAttachment(isChecked: isChecked)
+            
+            let attrString = NSMutableAttributedString(attributedString: textView.attributedText)
+            guard index < attrString.length else { return }
+            attrString.removeAttribute(.attachment, range: NSRange(location: index, length: 1))
+            attrString.addAttribute(.attachment, value: newAttachment, range: NSRange(location: index, length: 1))
+            
+            let nsString = attrString.string as NSString
+            let lineRange = nsString.lineRange(for: NSRange(location: index, length: 1))
+            
+            if lineRange.length > 2 {
+                let startPos = index + 2
+                let endPos = lineRange.location + lineRange.length
+                if startPos < endPos && endPos <= attrString.length {
+                    let textRange = NSRange(location: startPos, length: endPos - startPos)
+                    if isChecked {
+                        attrString.addAttribute(.strikethroughStyle, value: NSUnderlineStyle.single.rawValue, range: textRange)
+                        attrString.addAttribute(.foregroundColor, value: UIColor.secondaryLabel, range: textRange)
+                    } else {
+                        attrString.removeAttribute(.strikethroughStyle, range: textRange)
+                        attrString.addAttribute(.foregroundColor, value: UIColor.label, range: textRange)
+                    }
+                }
+            }
+            
+            isUpdating = true
+            let selectedRange = textView.selectedRange
+            textView.attributedText = attrString
+            textView.selectedRange = selectedRange
+            
+            let newText = NativeTextView.serializeToString(attributed: attrString)
+            self.lastParsedText = newText
+            parent.text = newText
+            isUpdating = false
+            
+            let generator = UIImpactFeedbackGenerator(style: .light)
+            generator.impactOccurred()
+        }
+        
+        func toggleChecklistAction() {
+            guard let textView = textView else { return }
+            
+            let string = textView.textStorage.string as NSString
+            let selectedRange = textView.selectedRange
+            let safeLocation = min(selectedRange.location, string.length)
+            let safeLength = min(selectedRange.length, string.length - safeLocation)
+            let safeRange = NSRange(location: safeLocation, length: safeLength)
+            
+            let lineRange = string.length > 0
+                ? string.lineRange(for: NSRange(location: safeRange.location, length: 0))
+                : NSRange(location: 0, length: 0)
+            
+            if safeRange.location <= string.length {
+                var range = NSRange(location: 0, length: 0)
+                let firstCharAttr = lineRange.length > 0 && lineRange.location < textView.textStorage.length
+                    ? textView.textStorage.attribute(NSAttributedString.Key.attachment, at: lineRange.location, effectiveRange: &range)
+                    : nil
+                
+                if firstCharAttr is CheckboxAttachment {
+                    isUpdating = true
+                    let mutableAttr = NSMutableAttributedString(attributedString: textView.attributedText)
+                    
+                    let removeRange = NSRange(location: lineRange.location, length: min(2, lineRange.length))
+                    mutableAttr.replaceCharacters(in: removeRange, with: "")
+                    
+                    let font = textView.font ?? UIFont.preferredFont(forTextStyle: .body)
+                    let normalParagraphStyle = NSMutableParagraphStyle()
+                    normalParagraphStyle.paragraphSpacing = 8
+                    
+                    let normalAttrs: [NSAttributedString.Key: Any] = [
+                        .font: font,
+                        .foregroundColor: UIColor.label,
+                        .paragraphStyle: normalParagraphStyle
+                    ]
+                    
+                    let nsString = mutableAttr.string as NSString
+                    let newLineRange = nsString.lineRange(for: NSRange(location: lineRange.location, length: 0))
+                    
+                    mutableAttr.addAttributes(normalAttrs, range: newLineRange)
+                    mutableAttr.removeAttribute(.strikethroughStyle, range: newLineRange)
+                    
+                    textView.attributedText = mutableAttr
+                    
+                    let newLocation = max(lineRange.location, safeRange.location - removeRange.length)
+                    textView.selectedRange = NSRange(location: newLocation, length: safeRange.length)
+                    
+                    let newText = NativeTextView.serializeToString(attributed: mutableAttr)
+                    self.lastParsedText = newText
+                    parent.text = newText
+                    isUpdating = false
+                    
+                } else {
+                    isUpdating = true
+                    let mutableAttr = NSMutableAttributedString(attributedString: textView.attributedText)
+                    
+                    let attachment = CheckboxAttachment(isChecked: false)
+                    let newBoxStr = NSMutableAttributedString(attachment: attachment)
+                    
+                    let font = textView.font ?? UIFont.preferredFont(forTextStyle: .body)
+                    let paragraphStyle = NSMutableParagraphStyle()
+                    paragraphStyle.headIndent = 32
+                    paragraphStyle.firstLineHeadIndent = 0
+                    paragraphStyle.paragraphSpacing = 8
+                    let attrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: UIColor.label, .paragraphStyle: paragraphStyle]
+                    
+                    newBoxStr.append(NSAttributedString(string: " ", attributes: attrs))
+                    newBoxStr.addAttributes(attrs, range: NSRange(location: 0, length: newBoxStr.length))
+                    
+                    mutableAttr.insert(newBoxStr, at: lineRange.location)
+                    
+                    let nsString = mutableAttr.string as NSString
+                    let newLineRange = nsString.lineRange(for: NSRange(location: lineRange.location, length: 1))
+                    if newLineRange.location + newLineRange.length <= mutableAttr.length {
+                        mutableAttr.addAttributes(attrs, range: newLineRange)
+                    }
+                    
+                    textView.attributedText = mutableAttr
+                    
+                    let newText = NativeTextView.serializeToString(attributed: mutableAttr)
+                    self.lastParsedText = newText
+                    parent.text = newText
+                    isUpdating = false
+                    
+                    textView.selectedRange = NSRange(location: selectedRange.location + newBoxStr.length, length: selectedRange.length)
+                }
+            }
+            
+            let generator = UIImpactFeedbackGenerator(style: .light)
+            generator.impactOccurred()
+        }
+        
+        func toggleBulletListAction() {
+            guard let textView = textView else { return }
+            
+            let string = textView.textStorage.string as NSString
+            let selectedRange = textView.selectedRange
+            let safeLocation = min(selectedRange.location, string.length)
+            let safeLength = min(selectedRange.length, string.length - safeLocation)
+            let safeRange = NSRange(location: safeLocation, length: safeLength)
+            
+            let lineRange = string.length > 0
+                ? string.lineRange(for: NSRange(location: safeRange.location, length: 0))
+                : NSRange(location: 0, length: 0)
+            
+            if safeRange.location <= string.length {
+                let currentLine = lineRange.length > 0 ? string.substring(with: lineRange) : ""
+                
+                isUpdating = true
+                let mutableAttr = NSMutableAttributedString(attributedString: textView.attributedText)
+                
+                let font = textView.font ?? UIFont.preferredFont(forTextStyle: .body)
+                let bulletParagraphStyle = NSMutableParagraphStyle()
+                bulletParagraphStyle.headIndent = 16
+                bulletParagraphStyle.firstLineHeadIndent = 0
+                bulletParagraphStyle.paragraphSpacing = 8
+                let attrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: UIColor.label, .paragraphStyle: bulletParagraphStyle]
+                
+                if currentLine.hasPrefix("• ") {
+                    let nsLine = currentLine as NSString
+                    let cleanLine = nsLine.substring(from: 2)
+                    mutableAttr.replaceCharacters(in: lineRange, with: cleanLine)
+                    
+                    let normalAttrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: UIColor.label, .paragraphStyle: NSMutableParagraphStyle()]
+                    let nsString = mutableAttr.string as NSString
+                    let newLineRange = nsString.lineRange(for: NSRange(location: lineRange.location, length: 0))
+                    mutableAttr.addAttributes(normalAttrs, range: newLineRange)
+                    
+                    textView.attributedText = mutableAttr
+                    textView.selectedRange = NSRange(location: max(0, safeRange.location - 2), length: safeRange.length)
+                } else {
+                    var adjustSelection = 2
+                    
+                    if currentLine.hasPrefix("- [ ] ") || currentLine.hasPrefix("- [x] ") {
+                        let checklistRange = NSRange(location: lineRange.location, length: 2)
+                        mutableAttr.replaceCharacters(in: checklistRange, with: "• ")
+                        adjustSelection = 0
+                    } else if let numberMatch = currentLine.range(of: #"^\d+\.\s"#, options: .regularExpression) {
+                        let nsMatch = NSRange(numberMatch, in: currentLine)
+                        let numberRange = NSRange(location: lineRange.location, length: nsMatch.length)
+                        mutableAttr.replaceCharacters(in: numberRange, with: "• ")
+                        adjustSelection = 2 - nsMatch.length
+                    } else {
+                        mutableAttr.insert(NSAttributedString(string: "• ", attributes: attrs), at: lineRange.location)
+                    }
+                    
+                    let nsString = mutableAttr.string as NSString
+                    let newLineRange = nsString.lineRange(for: NSRange(location: lineRange.location, length: 1))
+                    mutableAttr.addAttributes(attrs, range: newLineRange)
+                    
+                    textView.attributedText = mutableAttr
+                    textView.selectedRange = NSRange(location: safeRange.location + adjustSelection, length: safeRange.length)
+                }
+                
+                let newText = NativeTextView.serializeToString(attributed: textView.attributedText)
+                self.lastParsedText = newText
+                parent.text = newText
+                isUpdating = false
+            }
+            
+            let generator = UIImpactFeedbackGenerator(style: .light)
+            generator.impactOccurred()
+        }
+        
+        func toggleNumberedListAction() {
+            guard let textView = textView else { return }
+            
+            let string = textView.textStorage.string as NSString
+            let selectedRange = textView.selectedRange
+            let safeLocation = min(selectedRange.location, string.length)
+            let safeLength = min(selectedRange.length, string.length - safeLocation)
+            let safeRange = NSRange(location: safeLocation, length: safeLength)
+            
+            let lineRange = string.length > 0
+                ? string.lineRange(for: NSRange(location: safeRange.location, length: 0))
+                : NSRange(location: 0, length: 0)
+            
+            if safeRange.location <= string.length {
+                let currentLine = lineRange.length > 0 ? string.substring(with: lineRange) : ""
+                
+                isUpdating = true
+                let mutableAttr = NSMutableAttributedString(attributedString: textView.attributedText)
+                
+                let font = textView.font ?? UIFont.preferredFont(forTextStyle: .body)
+                let numberedParagraphStyle = NSMutableParagraphStyle()
+                numberedParagraphStyle.headIndent = 20
+                numberedParagraphStyle.firstLineHeadIndent = 0
+                numberedParagraphStyle.paragraphSpacing = 8
+                let attrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: UIColor.label, .paragraphStyle: numberedParagraphStyle]
+                
+                if let numberMatch = currentLine.range(of: #"^\d+\.\s"#, options: .regularExpression) {
+                    let nsMatch = NSRange(numberMatch, in: currentLine)
+                    let removeRange = NSRange(location: lineRange.location, length: nsMatch.length)
+                    mutableAttr.replaceCharacters(in: removeRange, with: "")
+                    
+                    let normalAttrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: UIColor.label, .paragraphStyle: NSMutableParagraphStyle()]
+                    let nsString = mutableAttr.string as NSString
+                    let newLineRange = nsString.lineRange(for: NSRange(location: lineRange.location, length: 0))
+                    mutableAttr.addAttributes(normalAttrs, range: newLineRange)
+                    
+                    textView.attributedText = mutableAttr
+                    textView.selectedRange = NSRange(location: max(0, safeRange.location - nsMatch.length), length: safeRange.length)
+                } else {
+                    var numberToUse = 1
+                    if lineRange.location > 0 {
+                        let aboveLineRange = string.lineRange(for: NSRange(location: lineRange.location - 1, length: 0))
+                        let aboveLine = string.substring(with: aboveLineRange)
+                        if let aboveMatch = aboveLine.range(of: #"^\d+\.\s"#, options: .regularExpression) {
+                            let numStr = aboveLine[aboveMatch].dropLast(2)
+                            if let prevNum = Int(numStr) {
+                                numberToUse = prevNum + 1
+                            }
+                        }
+                    }
+                    
+                    let prefix = "\(numberToUse). "
+                    var adjustSelection = prefix.count
+                    
+                    if currentLine.hasPrefix("• ") {
+                        let bulletRange = NSRange(location: lineRange.location, length: 2)
+                        mutableAttr.replaceCharacters(in: bulletRange, with: prefix)
+                        adjustSelection = prefix.count - 2
+                    } else if currentLine.hasPrefix("- [ ] ") || currentLine.hasPrefix("- [x] ") {
+                        let checklistRange = NSRange(location: lineRange.location, length: 2)
+                        mutableAttr.replaceCharacters(in: checklistRange, with: prefix)
+                        adjustSelection = prefix.count - 2
+                    } else {
+                        mutableAttr.insert(NSAttributedString(string: prefix, attributes: attrs), at: lineRange.location)
+                    }
+                    
+                    let nsString = mutableAttr.string as NSString
+                    let newLineRange = nsString.lineRange(for: NSRange(location: lineRange.location, length: 1))
+                    mutableAttr.addAttributes(attrs, range: newLineRange)
+                    
+                    textView.attributedText = mutableAttr
+                    textView.selectedRange = NSRange(location: safeRange.location + adjustSelection, length: safeRange.length)
+                }
+                
+                let newText = NativeTextView.serializeToString(attributed: textView.attributedText)
+                self.lastParsedText = newText
+                parent.text = newText
+                isUpdating = false
+            }
+            
+            let generator = UIImpactFeedbackGenerator(style: .light)
+            generator.impactOccurred()
+        }
+        
+        // MARK: - Inline Formatting Actions
+        
+        private func toggleFontTrait(_ trait: UIFontDescriptor.SymbolicTraits) {
+            guard let textView = textView else { return }
+            let string = textView.textStorage.string as NSString
+            let selectedRange = textView.selectedRange
+            let safeLocation = min(selectedRange.location, string.length)
+            let safeLength = min(selectedRange.length, string.length - safeLocation)
+            let safeRange = NSRange(location: safeLocation, length: safeLength)
+            
+            if safeRange.length > 0 {
+                let attrString = NSMutableAttributedString(attributedString: textView.attributedText)
+                
+                attrString.enumerateAttribute(.font, in: safeRange, options: []) { value, range, _ in
+                    let currentFont = (value as? UIFont) ?? textView.font ?? UIFont.preferredFont(forTextStyle: .body)
+                    var traits = currentFont.fontDescriptor.symbolicTraits
+                    
+                    if traits.contains(trait) {
+                        traits.remove(trait)
+                    } else {
+                        traits.insert(trait)
+                    }
+                    
+                    if let descriptor = currentFont.fontDescriptor.withSymbolicTraits(traits) {
+                        let newFont = UIFont(descriptor: descriptor, size: currentFont.pointSize)
+                        attrString.addAttribute(.font, value: newFont, range: range)
+                    }
+                }
+                
+                isUpdating = true
+                textView.attributedText = attrString
+                textView.selectedRange = safeRange
+                
+                let newText = NativeTextView.serializeToString(attributed: attrString)
+                self.lastParsedText = newText
+                parent.text = newText
+                isUpdating = false
+            } else {
+                var currentAttrs = textView.typingAttributes
+                let currentFont = (currentAttrs[.font] as? UIFont) ?? textView.font ?? UIFont.preferredFont(forTextStyle: .body)
+                var traits = currentFont.fontDescriptor.symbolicTraits
+                
+                if traits.contains(trait) {
+                    traits.remove(trait)
+                } else {
+                    traits.insert(trait)
+                }
+                
+                if let descriptor = currentFont.fontDescriptor.withSymbolicTraits(traits) {
+                    let newFont = UIFont(descriptor: descriptor, size: currentFont.pointSize)
+                    currentAttrs[.font] = newFont
+                    textView.typingAttributes = currentAttrs
+                }
+            }
+            
+            let generator = UIImpactFeedbackGenerator(style: .light)
+            generator.impactOccurred()
+        }
+        
+        func toggleBoldAction() {
+            toggleFontTrait(.traitBold)
+        }
+        
+        func toggleItalicAction() {
+            toggleFontTrait(.traitItalic)
+        }
+        
+        private func toggleAttribute(_ key: NSAttributedString.Key, value: Any) {
+            guard let textView = textView else { return }
+            let string = textView.textStorage.string as NSString
+            let selectedRange = textView.selectedRange
+            let safeLocation = min(selectedRange.location, string.length)
+            let safeLength = min(selectedRange.length, string.length - safeLocation)
+            let safeRange = NSRange(location: safeLocation, length: safeLength)
+            
+            if safeRange.length > 0 {
+                let attrString = NSMutableAttributedString(attributedString: textView.attributedText)
+                
+                var hasAttr = false
+                attrString.enumerateAttribute(key, in: safeRange, options: []) { val, range, _ in
+                    if val != nil {
+                        hasAttr = true
+                    }
+                }
+                
+                if hasAttr {
+                    attrString.removeAttribute(key, range: safeRange)
+                } else {
+                    attrString.addAttribute(key, value: value, range: safeRange)
+                }
+                
+                isUpdating = true
+                textView.attributedText = attrString
+                textView.selectedRange = safeRange
+                
+                let newText = NativeTextView.serializeToString(attributed: attrString)
+                self.lastParsedText = newText
+                parent.text = newText
+                isUpdating = false
+            } else {
+                var currentAttrs = textView.typingAttributes
+                if currentAttrs[key] != nil {
+                    currentAttrs.removeValue(forKey: key)
+                } else {
+                    currentAttrs[key] = value
+                }
+                textView.typingAttributes = currentAttrs
+            }
+            
+            let generator = UIImpactFeedbackGenerator(style: .light)
+            generator.impactOccurred()
+        }
+        
+        func toggleUnderlineAction() {
+            toggleAttribute(.underlineStyle, value: NSUnderlineStyle.single.rawValue)
+        }
+        
+        func toggleStrikethroughAction() {
+            toggleAttribute(.strikethroughStyle, value: NSUnderlineStyle.single.rawValue)
+        }
+        
+        // MARK: - Indentation Actions
+        
+        func increaseIndentAction() {
+            adjustIndent(by: 24)
+        }
+        
+        func decreaseIndentAction() {
+            adjustIndent(by: -24)
+        }
+        
+        private func adjustIndent(by amount: CGFloat) {
+            guard let textView = textView else { return }
+            
+            let string = textView.textStorage.string as NSString
+            let selectedRange = textView.selectedRange
+            let safeLocation = min(selectedRange.location, string.length)
+            let safeLength = min(selectedRange.length, string.length - safeLocation)
+            let safeRange = NSRange(location: safeLocation, length: safeLength)
+            
+            let lineRange = string.lineRange(for: NSRange(location: safeRange.location, length: 0))
+            
+            if safeRange.location <= string.length {
+                isUpdating = true
+                let attrString = NSMutableAttributedString(attributedString: textView.attributedText)
+                
+                var baseStyle = NSParagraphStyle.default
+                if lineRange.location < attrString.length {
+                    var optRange = NSRange(location: 0, length: 0)
+                    if let currentPara = attrString.attribute(.paragraphStyle, at: lineRange.location, effectiveRange: &optRange) as? NSParagraphStyle {
+                        baseStyle = currentPara
+                    }
+                } else if let typingPara = textView.typingAttributes[.paragraphStyle] as? NSParagraphStyle {
+                    baseStyle = typingPara
+                }
+                
+                let newFirstLineIndent = max(0, baseStyle.firstLineHeadIndent + amount)
+                let diff = newFirstLineIndent - baseStyle.firstLineHeadIndent
+                
+                let newPara = NSMutableParagraphStyle()
+                newPara.setParagraphStyle(baseStyle)
+                newPara.firstLineHeadIndent = newFirstLineIndent
+                newPara.headIndent = max(0, baseStyle.headIndent + diff)
+                
+                if lineRange.location < attrString.length && lineRange.location + lineRange.length <= attrString.length {
+                    attrString.addAttribute(.paragraphStyle, value: newPara, range: lineRange)
+                    
+                    textView.attributedText = attrString
+                    textView.selectedRange = safeRange
+                    
+                    let newText = NativeTextView.serializeToString(attributed: attrString)
+                    self.lastParsedText = newText
+                    parent.text = newText
+                } else {
+                    var currentAttrs = textView.typingAttributes
+                    currentAttrs[.paragraphStyle] = newPara
+                    textView.typingAttributes = currentAttrs
+                }
+                
+                isUpdating = false
+            }
+            
+            let generator = UIImpactFeedbackGenerator(style: .light)
+            generator.impactOccurred()
+        }
+        
         func textViewDidChange(_ textView: UITextView) {
             if isUpdating { return }
-            let newText = textView.text ?? ""
-            lastParsedText = newText
+            if textView.text.isEmpty {
+                let defaultFont = UIFont.preferredFont(forTextStyle: .body)
+                
+                let defaultParagraphStyle = NSMutableParagraphStyle()
+                defaultParagraphStyle.lineSpacing = 3.0
+                defaultParagraphStyle.paragraphSpacing = 8
+                
+                textView.typingAttributes = [
+                    .font: defaultFont,
+                    .foregroundColor: UIColor.label,
+                    .paragraphStyle: defaultParagraphStyle
+                ]
+            }
+            let newText = NativeTextView.serializeToString(attributed: textView.attributedText)
+            self.lastParsedText = newText
             parent.text = newText
         }
         
@@ -253,220 +1359,198 @@ struct NativeTextView: UIViewRepresentable {
                 if range.location == 0 {
                     parent.onBackspaceAtStart?()
                     return false
-                } else if range.location == (textView.text ?? "").count {
+                } else if range.location == (textView.attributedText?.length ?? 0) {
                     parent.onDeleteAtEnd?()
                     return false
                 }
             }
-            
-            // Auto-list item insertion logic on return key
             if text == "\n" {
-                let string = (textView.text ?? "") as NSString
+                let string = textView.textStorage.string as NSString
                 let lineRange = string.lineRange(for: NSRange(location: range.location, length: 0))
-                let currentLine = string.substring(with: lineRange)
                 
-                let trimmedLine = currentLine.trimmingCharacters(in: .whitespaces)
-                let indentSpaces = currentLine.prefix(while: { $0 == " " })
-                
-                // 1. Checklist
-                if trimmedLine.hasPrefix("- [ ] ") || trimmedLine.hasPrefix("- [x] ") || trimmedLine.hasPrefix("- [X] ") {
-                    let prefix = String(trimmedLine.prefix(6))
-                    if trimmedLine.count <= 6 {
-                        // Empty checklist line - clear it
-                        isUpdating = true
-                        let mutableText = NSMutableString(string: textView.text)
-                        mutableText.replaceCharacters(in: lineRange, with: "")
-                        textView.text = mutableText as String
-                        parent.text = textView.text
-                        isUpdating = false
-                        return false
-                    } else {
-                        // Insert next checklist item
-                        isUpdating = true
-                        let insertion = "\n\(indentSpaces)- [ ] "
-                        let mutableText = NSMutableString(string: textView.text)
-                        mutableText.replaceCharacters(in: range, with: insertion)
-                        textView.text = mutableText as String
-                        parent.text = textView.text
-                        textView.selectedRange = NSRange(location: range.location + insertion.count, length: 0)
-                        isUpdating = false
-                        return false
-                    }
-                }
-                
-                // 2. Bullet list
-                if trimmedLine.hasPrefix("- ") || trimmedLine.hasPrefix("* ") || trimmedLine.hasPrefix("+ ") {
-                    let prefix = String(trimmedLine.prefix(2))
-                    if trimmedLine.count <= 2 {
-                        // Empty bullet line - clear it
-                        isUpdating = true
-                        let mutableText = NSMutableString(string: textView.text)
-                        mutableText.replaceCharacters(in: lineRange, with: "")
-                        textView.text = mutableText as String
-                        parent.text = textView.text
-                        isUpdating = false
-                        return false
-                    } else {
-                        // Insert next bullet point
-                        isUpdating = true
-                        let insertion = "\n\(indentSpaces)\(prefix)"
-                        let mutableText = NSMutableString(string: textView.text)
-                        mutableText.replaceCharacters(in: range, with: insertion)
-                        textView.text = mutableText as String
-                        parent.text = textView.text
-                        textView.selectedRange = NSRange(location: range.location + insertion.count, length: 0)
-                        isUpdating = false
-                        return false
-                    }
-                }
-                
-                // 3. Numbered list
-                if let numberRange = trimmedLine.range(of: #"^\d+\.\s"#, options: .regularExpression) {
-                    let prefix = String(trimmedLine[numberRange])
-                    if trimmedLine.count <= prefix.count {
-                        // Empty numbered item - clear it
-                        isUpdating = true
-                        let mutableText = NSMutableString(string: textView.text)
-                        mutableText.replaceCharacters(in: lineRange, with: "")
-                        textView.text = mutableText as String
-                        parent.text = textView.text
-                        isUpdating = false
-                        return false
-                    } else {
-                        // Increment and insert next numbered item
-                        let numberStr = prefix.trimmingCharacters(in: .whitespaces).dropLast()
-                        var nextNum = 1
-                        if let currentNum = Int(numberStr) {
-                            nextNum = currentNum + 1
+                if lineRange.location <= string.length {
+                    let currentLine = string.substring(with: lineRange)
+                    let level = NativeTextView.getIndentLevel(from: currentLine)
+                    let strippedLine = NativeTextView.stripIndent(from: currentLine, level: level)
+                    
+                    // 1. Checklist case
+                    var r = NSRange(location: 0, length: 0)
+                    let firstCharAttr = lineRange.length > 0
+                        ? textView.textStorage.attribute(NSAttributedString.Key.attachment, at: lineRange.location, effectiveRange: &r)
+                        : nil
+                        
+                    if firstCharAttr is CheckboxAttachment {
+                        let isLineEmpty = strippedLine.count <= 2 || (strippedLine.count == 3 && strippedLine.hasSuffix("\n"))
+                        
+                        if isLineEmpty {
+                            isUpdating = true
+                            let mutableAttr = NSMutableAttributedString(attributedString: textView.attributedText)
+                            mutableAttr.replaceCharacters(in: lineRange, with: "")
+                            
+                            let font = textView.font ?? UIFont.preferredFont(forTextStyle: .body)
+                            let normalAttrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: UIColor.label, .paragraphStyle: NSMutableParagraphStyle()]
+                            if lineRange.location < mutableAttr.length {
+                                let nsString = mutableAttr.string as NSString
+                                let newRange = nsString.lineRange(for: NSRange(location: lineRange.location, length: 0))
+                                mutableAttr.addAttributes(normalAttrs, range: newRange)
+                            }
+                            
+                            textView.attributedText = mutableAttr
+                            
+                            let newText = NativeTextView.serializeToString(attributed: mutableAttr)
+                            self.lastParsedText = newText
+                            parent.text = newText
+                            isUpdating = false
+                            
+                            textView.selectedRange = NSRange(location: lineRange.location, length: 0)
+                            return false
+                        } else {
+                            isUpdating = true
+                            let mutableAttr = NSMutableAttributedString(attributedString: textView.attributedText)
+                            
+                            let attachment = CheckboxAttachment(isChecked: false)
+                            let newBoxStr = NSMutableAttributedString(string: "\n" + String(repeating: "  ", count: level))
+                            newBoxStr.append(NSAttributedString(attachment: attachment))
+                            
+                            let font = textView.font ?? UIFont.preferredFont(forTextStyle: .body)
+                            let paragraphStyle = NSMutableParagraphStyle()
+                            let indentOffset = CGFloat(level * 24)
+                            paragraphStyle.headIndent = indentOffset + 32
+                            paragraphStyle.firstLineHeadIndent = indentOffset
+                            paragraphStyle.paragraphSpacing = 8
+                            let attrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: UIColor.label, .paragraphStyle: paragraphStyle]
+                            
+                            newBoxStr.append(NSAttributedString(string: " ", attributes: attrs))
+                            newBoxStr.addAttributes(attrs, range: NSRange(location: 0, length: newBoxStr.length))
+                            
+                            mutableAttr.replaceCharacters(in: range, with: newBoxStr)
+                            textView.attributedText = mutableAttr
+                            
+                            let newText = NativeTextView.serializeToString(attributed: mutableAttr)
+                            self.lastParsedText = newText
+                            parent.text = newText
+                            isUpdating = false
+                            
+                            textView.selectedRange = NSRange(location: range.location + newBoxStr.length, length: 0)
+                            return false
                         }
-                        isUpdating = true
-                        let insertion = "\n\(indentSpaces)\(nextNum). "
-                        let mutableText = NSMutableString(string: textView.text)
-                        mutableText.replaceCharacters(in: range, with: insertion)
-                        textView.text = mutableText as String
-                        parent.text = textView.text
-                        textView.selectedRange = NSRange(location: range.location + insertion.count, length: 0)
-                        isUpdating = false
-                        return false
+                    }
+                    
+                    // 2. Bullet point case
+                    if strippedLine.hasPrefix("• ") {
+                        let isLineEmpty = strippedLine.count <= 3
+                        
+                        if isLineEmpty {
+                            isUpdating = true
+                            let mutableAttr = NSMutableAttributedString(attributedString: textView.attributedText)
+                            mutableAttr.replaceCharacters(in: lineRange, with: "")
+                            
+                            let font = textView.font ?? UIFont.preferredFont(forTextStyle: .body)
+                            let normalAttrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: UIColor.label, .paragraphStyle: NSMutableParagraphStyle()]
+                            if lineRange.location < mutableAttr.length {
+                                let nsString = mutableAttr.string as NSString
+                                let newRange = nsString.lineRange(for: NSRange(location: lineRange.location, length: 0))
+                                mutableAttr.addAttributes(normalAttrs, range: newRange)
+                            }
+                            
+                            textView.attributedText = mutableAttr
+                            
+                            let newText = NativeTextView.serializeToString(attributed: mutableAttr)
+                            self.lastParsedText = newText
+                            parent.text = newText
+                            isUpdating = false
+                            
+                            textView.selectedRange = NSRange(location: lineRange.location, length: 0)
+                            return false
+                        } else {
+                            isUpdating = true
+                            let mutableAttr = NSMutableAttributedString(attributedString: textView.attributedText)
+                            
+                            let font = textView.font ?? UIFont.preferredFont(forTextStyle: .body)
+                            let bulletParagraphStyle = NSMutableParagraphStyle()
+                            let indentOffset = CGFloat(level * 24)
+                            bulletParagraphStyle.headIndent = indentOffset + 16
+                            bulletParagraphStyle.firstLineHeadIndent = indentOffset
+                            bulletParagraphStyle.paragraphSpacing = 8
+                            let attrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: UIColor.label, .paragraphStyle: bulletParagraphStyle]
+                            
+                            let newBulletStr = NSMutableAttributedString(string: "\n" + String(repeating: "  ", count: level) + "• ", attributes: attrs)
+                            
+                            mutableAttr.replaceCharacters(in: range, with: newBulletStr)
+                            textView.attributedText = mutableAttr
+                            
+                            let newText = NativeTextView.serializeToString(attributed: mutableAttr)
+                            self.lastParsedText = newText
+                            parent.text = newText
+                            isUpdating = false
+                            
+                            textView.selectedRange = NSRange(location: range.location + newBulletStr.length, length: 0)
+                            return false
+                        }
+                    }
+                    
+                    // 3. Numbered list case
+                    if let numberMatch = strippedLine.range(of: #"^\d+\.\s"#, options: .regularExpression) {
+                        let prefix = String(strippedLine[numberMatch])
+                        let isLineEmpty = strippedLine.count <= prefix.count + 1
+                        
+                        if isLineEmpty {
+                            isUpdating = true
+                            let mutableAttr = NSMutableAttributedString(attributedString: textView.attributedText)
+                            mutableAttr.replaceCharacters(in: lineRange, with: "")
+                            
+                            let font = textView.font ?? UIFont.preferredFont(forTextStyle: .body)
+                            let normalAttrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: UIColor.label, .paragraphStyle: NSMutableParagraphStyle()]
+                            if lineRange.location < mutableAttr.length {
+                                let nsString = mutableAttr.string as NSString
+                                let newRange = nsString.lineRange(for: NSRange(location: lineRange.location, length: 0))
+                                mutableAttr.addAttributes(normalAttrs, range: newRange)
+                            }
+                            
+                            textView.attributedText = mutableAttr
+                            
+                            let newText = NativeTextView.serializeToString(attributed: mutableAttr)
+                            self.lastParsedText = newText
+                            parent.text = newText
+                            isUpdating = false
+                            
+                            textView.selectedRange = NSRange(location: lineRange.location, length: 0)
+                            return false
+                        } else {
+                            let numStr = prefix.dropLast(2)
+                            var nextNum = 1
+                            if let currentNum = Int(numStr) {
+                                nextNum = currentNum + 1
+                            }
+                            
+                            isUpdating = true
+                            let mutableAttr = NSMutableAttributedString(attributedString: textView.attributedText)
+                            
+                            let font = textView.font ?? UIFont.preferredFont(forTextStyle: .body)
+                            let numberedParagraphStyle = NSMutableParagraphStyle()
+                            let indentOffset = CGFloat(level * 24)
+                            numberedParagraphStyle.headIndent = indentOffset + 20
+                            numberedParagraphStyle.firstLineHeadIndent = indentOffset
+                            numberedParagraphStyle.paragraphSpacing = 8
+                            let attrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: UIColor.label, .paragraphStyle: numberedParagraphStyle]
+                            
+                            let newPrefixStr = NSMutableAttributedString(string: "\n" + String(repeating: "  ", count: level) + "\(nextNum). ", attributes: attrs)
+                            
+                            mutableAttr.replaceCharacters(in: range, with: newPrefixStr)
+                            textView.attributedText = mutableAttr
+                            
+                            let newText = NativeTextView.serializeToString(attributed: mutableAttr)
+                            self.lastParsedText = newText
+                            parent.text = newText
+                            isUpdating = false
+                            
+                            textView.selectedRange = NSRange(location: range.location + newPrefixStr.length, length: 0)
+                            return false
+                        }
                     }
                 }
             }
             return true
-        }
-        
-        // MARK: - Toolbar Formatting Actions
-        
-        func toggleBoldAction() {
-            wrapSelection(prefix: "**", suffix: "**")
-        }
-        
-        func toggleItalicAction() {
-            wrapSelection(prefix: "_", suffix: "_")
-        }
-        
-        func toggleUnderlineAction() {
-            wrapSelection(prefix: "<u>", suffix: "</u>")
-        }
-        
-        func toggleStrikethroughAction() {
-            wrapSelection(prefix: "~~", suffix: "~~")
-        }
-        
-        func toggleChecklistAction() {
-            toggleLinePrefix(prefix: "- [ ] ")
-        }
-        
-        func toggleBulletListAction() {
-            toggleLinePrefix(prefix: "- ")
-        }
-        
-        func toggleNumberedListAction() {
-            toggleLinePrefix(prefix: "1. ")
-        }
-        
-        func increaseIndentAction() {
-            modifyIndent(amount: 2)
-        }
-        
-        func decreaseIndentAction() {
-            modifyIndent(amount: -2)
-        }
-        
-        private func wrapSelection(prefix: String, suffix: String) {
-            guard let tv = textView else { return }
-            let selectedRange = tv.selectedRange
-            let nsText = (tv.text ?? "") as NSString
-            let selectedText = nsText.substring(with: selectedRange)
-            
-            let insertion = prefix + selectedText + suffix
-            let newText = nsText.replacingCharacters(in: selectedRange, with: insertion)
-            
-            isUpdating = true
-            tv.text = newText
-            parent.text = newText
-            isUpdating = false
-            
-            let cursorOffset = prefix.count + selectedText.count + suffix.count
-            tv.selectedRange = NSRange(location: selectedRange.location + cursorOffset, length: 0)
-            let generator = UIImpactFeedbackGenerator(style: .light)
-            generator.impactOccurred()
-        }
-        
-        private func toggleLinePrefix(prefix: String) {
-            guard let tv = textView else { return }
-            let selectedRange = tv.selectedRange
-            let nsText = (tv.text ?? "") as NSString
-            
-            let lineRange = nsText.lineRange(for: NSRange(location: selectedRange.location, length: 0))
-            let lineText = nsText.substring(with: lineRange)
-            
-            var insertion = lineText
-            if lineText.hasPrefix(prefix) {
-                insertion = String(lineText.dropFirst(prefix.count))
-            } else {
-                insertion = prefix + lineText
-            }
-            
-            isUpdating = true
-            let newText = nsText.replacingCharacters(in: lineRange, with: insertion)
-            tv.text = newText
-            parent.text = newText
-            isUpdating = false
-            
-            let diff = insertion.count - lineText.count
-            tv.selectedRange = NSRange(location: max(0, selectedRange.location + diff), length: 0)
-            let generator = UIImpactFeedbackGenerator(style: .light)
-            generator.impactOccurred()
-        }
-        
-        private func modifyIndent(amount: Int) {
-            guard let tv = textView else { return }
-            let selectedRange = tv.selectedRange
-            let nsText = (tv.text ?? "") as NSString
-            
-            let lineRange = nsText.lineRange(for: NSRange(location: selectedRange.location, length: 0))
-            let lineText = nsText.substring(with: lineRange)
-            
-            var insertion = lineText
-            if amount > 0 {
-                insertion = String(repeating: " ", count: amount) + lineText
-            } else if amount < 0 {
-                let spacesToRemove = abs(amount)
-                if lineText.hasPrefix(String(repeating: " ", count: spacesToRemove)) {
-                    insertion = String(lineText.dropFirst(spacesToRemove))
-                }
-            }
-            
-            isUpdating = true
-            let newText = nsText.replacingCharacters(in: lineRange, with: insertion)
-            tv.text = newText
-            parent.text = newText
-            isUpdating = false
-            
-            let diff = insertion.count - lineText.count
-            tv.selectedRange = NSRange(location: max(0, selectedRange.location + diff), length: 0)
-            let generator = UIImpactFeedbackGenerator(style: .light)
-            generator.impactOccurred()
         }
     }
 }

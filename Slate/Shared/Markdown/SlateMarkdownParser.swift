@@ -171,10 +171,12 @@ enum SlateMarkdownParser {
                 var level = 0
                 var rest = trimmed
                 while rest.hasPrefix("#") { level += 1; rest = String(rest.dropFirst()) }
-                let headingText = rest.trimmingCharacters(in: .whitespaces)
-                blocks.append(.heading(level: min(level, 6), text: headingText))
-                i += 1
-                continue
+                if rest.hasPrefix(" ") || rest.isEmpty {
+                    let headingText = rest.trimmingCharacters(in: .whitespaces)
+                    blocks.append(.heading(level: min(level, 6), text: headingText))
+                    i += 1
+                    continue
+                }
             }
 
             // ── Alert card (GitHub-flavored blockquote) ────────────────────
@@ -289,7 +291,8 @@ enum SlateMarkdownParser {
     // MARK: - Helpers
 
     private static func isSpecialLine(_ t: String) -> Bool {
-        return t.hasPrefix("#") || t.hasPrefix("```") || t.hasPrefix(">") ||
+        let isHeading = t.range(of: #"^#{1,6}(\s|$)"#, options: .regularExpression) != nil
+        return isHeading || t.hasPrefix("```") || t.hasPrefix(">") ||
                t.hasPrefix("- [ ]") || t.hasPrefix("- [x]") || t.hasPrefix("- [X]") ||
                t.hasPrefix("- ") || t.hasPrefix("* ") || t.hasPrefix("+ ") ||
                t.hasPrefix("|") || t.hasPrefix("<genui>") ||
