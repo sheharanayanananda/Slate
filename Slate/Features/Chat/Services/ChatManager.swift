@@ -165,6 +165,13 @@ final class ChatManager {
         }
     }
     
+    func updateMessageNoteId(messageID: String, noteId: String?) {
+        if let index = messages.firstIndex(where: { $0.id == messageID }) {
+            messages[index].slateNoteId = noteId
+            saveCurrentState()
+        }
+    }
+    
     func selectSession(_ session: ChatSession) {
         saveCurrentState()
         activeSessionId = session.id

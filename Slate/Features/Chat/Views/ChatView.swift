@@ -82,11 +82,12 @@ struct ChatView: View {
                                 ForEach(messages) { message in
                                     ChatBubbleView(
                                         message: message,
-                                        isNew: message.id == newlyGeneratedMessageId,
-                                        isGenerating: isGenerating && message.id == messages.last?.id
-                                    ) {
-                                        self.scrollToBottom(proxy: proxy, delay: 0.0, animate: true)
-                                    }
+                                        isNew: isNewMessage(message),
+                                        isGenerating: isGeneratingMessage(message),
+                                        onBlockRevealed: {
+                                            self.scrollToBottom(proxy: proxy, delay: 0.0, animate: true)
+                                        }
+                                    )
                                 }
                                 
                                 if let errorMessage = errorMessage {
@@ -115,7 +116,7 @@ struct ChatView: View {
                         )
                             .padding(.bottom, 16)
                     }
-                    .onChange(of: messages) {
+                    .onChange(of: messages.count) {
                         if hasAppeared {
                             scrollToBottom(proxy: proxy, delay: 0.08)
                         }
@@ -157,28 +158,22 @@ struct ChatView: View {
                 Menu {
                     Picker("Preset", selection: $chatManager.displayedPreset) {
                         ForEach(ChatPreset.allCases) { preset in
-                            Label {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(preset.title)
-                                    Text(preset.subtitle)
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                }
-                            } icon: {
-                                Image(systemName: preset.iconName)
-                            }
-                            .tag(preset)
+                            Text(preset.title)
+                                .tag(preset)
                         }
                     }
                 } label: {
                     HStack(spacing: 4) {
-                        Text("\(Text("Slate ").font(.system(size: 17, weight: .semibold)))\(Text(chatManager.displayedPreset.modelTierName).font(.system(size: 16, weight: .regular)))")
-                            .foregroundColor(.primary)
+                        Text("Slate")
+                            .font(.system(size: 17, weight: .semibold))
+                        Text(chatManager.displayedPreset.modelTierName)
+                            .font(.system(size: 16, weight: .regular))
                         
                         Image(systemName: "chevron.down")
                             .font(.system(size: 10, weight: .bold))
                             .foregroundColor(.secondary)
                     }
+                    .foregroundColor(.primary)
                 }
                 .buttonStyle(.plain)
                 .onChange(of: chatManager.displayedPreset) {
@@ -282,6 +277,15 @@ extension ChatView {
                 proxy.scrollTo("bottomSpacer", anchor: .bottom)
             }
         }
+    }
+    
+    private func isGeneratingMessage(_ message: OllamaChatMessage) -> Bool {
+        guard isGenerating else { return false }
+        return message.id == messages.last?.id
+    }
+    
+    private func isNewMessage(_ message: OllamaChatMessage) -> Bool {
+        message.id == newlyGeneratedMessageId
     }
 }
 

@@ -19,49 +19,81 @@ struct SettingsView: View {
 
     // MARK: - UI Code
     var body: some View {
-        Form {
-            Section(
-                header: Text("Ollama"),
-                footer: Text("Your API key is encrypted and stored securely in your device's Keychain. It is used to authorize intelligence features on the cloud server.")
-            ) {
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack {
-                        if showKey {
-                            TextField("Ollama API Key", text: $viewModel.apiKey)
-                                .autocorrectionDisabled()
-                                .textInputAutocapitalization(.never)
-                        } else {
-                            SecureField("Ollama API Key", text: $viewModel.apiKey)
-                                .autocorrectionDisabled()
-                                .textInputAutocapitalization(.never)
-                        }
-                        
-                        Button(action: { showKey.toggle() }) {
-                            Image(systemName: showKey ? "eye.slash" : "eye")
-                                .foregroundColor(.secondary)
-                        }
-                        .buttonStyle(.plain)
+        List {
+            // Ollama API Key Row
+            Section { 
+                HStack(spacing: 12) {
+                    Image(systemName: "key.fill")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(colorScheme == .dark ? .black : .white)
+                        .frame(width: 28, height: 28)
+                        .background(
+                            RoundedRectangle(cornerRadius: 7, style: .continuous)
+                                .fill(colorScheme == .dark ? Color.white : Color.black)
+                        )
+                    
+                    if showKey {
+                        TextField("Ollama API Key", text: $viewModel.apiKey)
+                            .autocorrectionDisabled()
+                            .textInputAutocapitalization(.never)
+                    } else {
+                        SecureField("Ollama API Key", text: $viewModel.apiKey)
+                            .autocorrectionDisabled()
+                            .textInputAutocapitalization(.never)
                     }
                     
-                    if viewModel.validationStatus != .empty {
-                        HStack(spacing: 6) {
-                            if viewModel.validationStatus == .checking {
-                                ProgressView()
-                                    .controlSize(.small)
-                            } else {
-                                Image(systemName: viewModel.validationStatus.iconName)
-                                    .foregroundColor(viewModel.validationStatus.color)
-                                    .font(.system(size: 14, weight: .bold))
-                            }
-                            Text(viewModel.validationStatus.message)
-                                .font(.caption)
+                    Button(action: { showKey.toggle() }) {
+                        Image(systemName: showKey ? "eye.slash" : "eye")
+                            .font(.system(size: 14))
+                            .foregroundColor(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                }
+                
+                if viewModel.validationStatus != .empty {
+                    HStack(spacing: 8) {
+                        if viewModel.validationStatus == .checking {
+                            ProgressView()
+                                .controlSize(.small)
+                        } else {
+                            Image(systemName: viewModel.validationStatus.iconName)
                                 .foregroundColor(viewModel.validationStatus.color)
+                                .font(.system(size: 13, weight: .semibold))
                         }
-                        .padding(.vertical, 2)
+                        
+                        Text(viewModel.validationStatus.message)
+                            .font(.subheadline)
+                            .foregroundColor(viewModel.validationStatus.color)
                     }
                 }
             }
+            
+            // How to obtain API Key
+            Section {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("1. Create or sign in to your account at ollama.com")
+                    Text("2. Navigate to your Account Settings to generate a key")
+                    Text("3. Copy and paste your key into the field above")
+                }
+                .font(.footnote)
+                .foregroundColor(.secondary)
+                .padding(.vertical, 2)
+                
+                Link(destination: URL(string: "https://ollama.com")!) {
+                    HStack {
+                        Text("Get Ollama API Key")
+                            .foregroundColor(.primary)
+                        Spacer()
+                        Image(systemName: "arrow.up.right")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundColor(.secondary)
+                    }
+                }
+            }
+            
+            // Future settings sections/rows can be placed right here natively
         }
+        .listStyle(.insetGrouped)
         .navigationTitle("Settings")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {

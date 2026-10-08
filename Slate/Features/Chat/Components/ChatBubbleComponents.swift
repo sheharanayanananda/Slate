@@ -112,7 +112,7 @@ struct ChatBubbleView: View {
                         HStack(spacing: 8) {
                             CopyButton(text: message.content)
                             if isNoteWorthy(message.content) {
-                                SlateNoteButton(text: message.content)
+                                SlateNoteButton(messageID: message.id, slateNoteId: message.slateNoteId, text: message.content)
                             }
                             Spacer()
                         }
@@ -190,9 +190,12 @@ struct CopyButton: View {
 }
 
 struct SlateNoteButton: View {
+    let messageID: String
+    let slateNoteId: String?
     let text: String
     @Environment(\.modelContext) private var context
     @Environment(\.colorScheme) private var colorScheme
+    @Query private var allNotes: [SlateModel]
     
     enum SaveState {
         case idle
@@ -200,15 +203,35 @@ struct SlateNoteButton: View {
         case saved
     }
     
-    @State private var state: SaveState = .idle
+    @State private var isSaving = false
+    
+    private var isSaved: Bool {
+        guard let noteId = slateNoteId else { return false }
+        return allNotes.contains(where: { $0.id == noteId })
+    }
+    
+    private var currentState: SaveState {
+        if isSaving {
+            return .saving
+        } else if isSaved {
+            return .saved
+        } else {
+            return .idle
+        }
+    }
     
     var body: some View {
         Button(action: {
-            guard state != .saving else { return }
+            guard currentState == .idle else {
+                if currentState == .saved {
+                    HapticManager.trigger(.light)
+                }
+                return
+            }
             saveToNotes()
         }) {
             HStack(spacing: 6) {
-                switch state {
+                switch currentState {
                 case .idle:
                     Image(systemName: "plus")
                         .font(.system(size: 12, weight: .medium))
@@ -229,7 +252,7 @@ struct SlateNoteButton: View {
                         .foregroundColor(.green)
                 }
             }
-            .foregroundColor(state == .saved ? .green : .secondary)
+            .foregroundColor(currentState == .saved ? .green : .secondary)
             .padding(.horizontal, 12)
             .frame(height: 28)
             .background(
@@ -237,20 +260,20 @@ struct SlateNoteButton: View {
                     .fill(colorScheme == .dark ? Color(white: 0.15) : Color(white: 0.93))
                     .overlay(
                         Capsule()
-                            .stroke(state == .saved ? Color.green.opacity(0.3) : Color.primary.opacity(0.06), lineWidth: 1)
+                            .stroke(currentState == .saved ? Color.green.opacity(0.3) : Color.primary.opacity(0.06), lineWidth: 1)
                     )
             )
             .contentShape(Capsule())
         }
         .buttonStyle(ScaleButtonStyle())
-        .disabled(state == .saving)
+        .disabled(currentState == .saving)
     }
     
     private func saveToNotes() {
         HapticManager.triggerNotification(.success)
         
         withAnimation(.easeInOut(duration: 0.2)) {
-            state = .saving
+            isSaving = true
         }
         
         Task {
@@ -283,7 +306,12 @@ struct SlateNoteButton: View {
                     extractedBody = responseText.isEmpty ? text : responseText
                 }
                 
-                let finalTitle = extractedTitle
+                // Strip emojis from the generated title
+                let titleWithoutEmojis = String(extractedTitle.unicodeScalars.filter {
+                    !($0.properties.isEmojiPresentation || ($0.properties.isEmoji && $0.value > 0x2380))
+                }).trimmingCharacters(in: .whitespacesAndNewlines)
+                
+                let finalTitle = titleWithoutEmojis.isEmpty ? "AI Note" : titleWithoutEmojis
                 let finalBody = extractedBody
                 
                 await MainActor.run {
@@ -291,18 +319,21 @@ struct SlateNoteButton: View {
                     context.insert(note)
                     try? context.save()
                     
+                    // Update ChatManager persistent state
+                    ChatManager.shared.updateMessageNoteId(messageID: messageID, noteId: note.id)
+                    
                     // Post a notification to trigger Notes tab badge pulse
                     NotificationCenter.default.post(name: NSNotification.Name("PulseNotesTab"), object: nil)
                     
                     withAnimation(.easeInOut(duration: 0.2)) {
-                        state = .saved
+                        isSaving = false
                     }
                 }
             } catch {
                 print("Failed to save to notes: \(error)")
                 await MainActor.run {
                     withAnimation(.easeInOut(duration: 0.2)) {
-                        state = .idle
+                        isSaving = false
                     }
                 }
             }

@@ -43,37 +43,42 @@ struct OllamaChatMessage: Codable, Equatable, Identifiable {
     var images: [String]? // Base64 encoded JPEG representations
     var documents: [OllamaDocumentAttachment]?
     var genuiState: String? // Persistent interactive state
+    var slateNoteId: String? // Persistent reference to saved SlateModel.id
     
     enum CodingKeys: String, CodingKey {
-        case role, content, images, documents, genuiState
+        case id, role, content, images, documents, genuiState, slateNoteId
     }
     
-    init(id: String = UUID().uuidString, role: String, content: String, images: [String]? = nil, documents: [OllamaDocumentAttachment]? = nil, genuiState: String? = nil) {
+    init(id: String = UUID().uuidString, role: String, content: String, images: [String]? = nil, documents: [OllamaDocumentAttachment]? = nil, genuiState: String? = nil, slateNoteId: String? = nil) {
         self.id = id
         self.role = role
         self.content = content
         self.images = images
         self.documents = documents
         self.genuiState = genuiState
+        self.slateNoteId = slateNoteId
     }
     
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.id = (try? container.decodeIfPresent(String.self, forKey: .id)) ?? UUID().uuidString
         self.role = try container.decode(String.self, forKey: .role)
         self.content = try container.decode(String.self, forKey: .content)
         self.images = try container.decodeIfPresent([String].self, forKey: .images)
         self.documents = try container.decodeIfPresent([OllamaDocumentAttachment].self, forKey: .documents)
         self.genuiState = try container.decodeIfPresent(String.self, forKey: .genuiState)
-        self.id = UUID().uuidString
+        self.slateNoteId = try container.decodeIfPresent(String.self, forKey: .slateNoteId)
     }
     
     func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
         try container.encode(role, forKey: .role)
         try container.encode(content, forKey: .content)
         try container.encodeIfPresent(images, forKey: .images)
         try container.encodeIfPresent(documents, forKey: .documents)
         try container.encodeIfPresent(genuiState, forKey: .genuiState)
+        try container.encodeIfPresent(slateNoteId, forKey: .slateNoteId)
     }
 }
 
@@ -161,13 +166,13 @@ enum ChatPreset: String, CaseIterable, Identifiable {
         }
     }
 
-    var iconName: String {
-        switch self {
-        case .slateFlash:    return "bolt.fill"
-        case .slateCreative: return "paintpalette.fill"
-        case .slatePro:      return "brain.head.profile"
-        }
-    }
+//    var iconName: String {
+//        switch self {
+//        case .slateFlash:    return "bolt.fill"
+//        case .slateCreative: return "paintpalette.fill"
+//        case .slatePro:      return "brain.head.profile"
+//        }
+//    }
 
     // MARK: - AI Configuration
 
