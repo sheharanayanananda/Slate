@@ -98,8 +98,8 @@ struct SlateTabView: View {
                 if notes.isEmpty {
                     ContentUnavailableView(
                         "Hello !",
-                        systemImage: "scribble.variable",
-                        description: Text("Let's slate down something useful!")
+                        systemImage: "snowflake",
+                        description: Text("Welcome To Slate")
                     )
                 }
             }

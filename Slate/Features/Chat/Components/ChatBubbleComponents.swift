@@ -92,7 +92,7 @@ struct ChatBubbleView: View {
                         .background(colorScheme == .dark ? Color(white: 0.15) : Color(white: 0.93))
                         .clipShape(RoundedRectangle(cornerRadius: 25, style: .continuous))
                         .textSelection(.enabled)
-                        .frame(maxWidth: screenWidth * 0.70, alignment: .trailing)
+                        .frame(maxWidth: screenWidth * 0.85, alignment: .trailing)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .trailing)

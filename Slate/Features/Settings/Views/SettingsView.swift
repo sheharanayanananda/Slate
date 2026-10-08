@@ -16,7 +16,7 @@ struct SettingsView: View {
     var onDismiss: (() -> Void)? = nil
 
     @State private var showKey: Bool = false
-
+    
     // MARK: - UI Code
     var body: some View {
         List {
@@ -90,10 +90,11 @@ struct SettingsView: View {
                     }
                 }
             }
-            
-            // Future settings sections/rows can be placed right here natively
         }
         .listStyle(.insetGrouped)
+        .safeAreaInset(edge: .bottom) {
+            bottomDeveloperFooter
+        }
         .navigationTitle("Settings")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -112,6 +113,46 @@ struct SettingsView: View {
         .onChange(of: viewModel.apiKey) {
             viewModel.handleApiKeyChange()
         }
+    }
+    
+    // MARK: - Bottom Developer Footer (Native Menu)
+    @ViewBuilder
+    private var bottomDeveloperFooter: some View {
+        Menu {
+            if let portfolioUrl = URL(string: "https://shehara.dayzsolutions.com/") {
+                Link(destination: portfolioUrl) {
+                    Label("Thineth Shehara", systemImage: "person.crop.circle")
+                }
+            }
+            
+            if let slateUrl = URL(string: "https://shehara.dayzsolutions.com/slate") {
+                Link(destination: slateUrl) {
+                    Label("Project Slate", systemImage: "snowflake")
+                }
+            }
+        } label: {
+            VStack(spacing: 3) {
+                Text("Slate Agentic \(appVersion)")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundColor(.primary)
+                
+                Text("Engineered By Thineth")
+                    .font(.system(size: 11, weight: .regular))
+                    .foregroundColor(.secondary)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.top, 8)
+            .padding(.bottom, 12)
+            .contentShape(Rectangle())
+        }
+        .simultaneousGesture(TapGesture().onEnded {
+            HapticManager.trigger(.light)
+        })
+    }
+    
+    private var appVersion: String {
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
+        return "v\(version)"
     }
 }
 

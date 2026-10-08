@@ -34,36 +34,6 @@
             endingLineNumber = "34"
             landmarkName = "body"
             landmarkType = "24">
-            <Locations>
-               <Location
-                  uuid = "0724B6FC-1A91-4DC9-83BF-8358CAD151B9 - 4329a316bcc274eb"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "closure #1 () -&gt; Slate.SlateTabView in closure #1 () -&gt; SwiftUI.NavigationStack&lt;SwiftUI.NavigationPath, Slate.SlateTabView&gt; in closure #1 () -&gt; &lt;&lt;opaque return type of static SwiftUI.TabContentBuilder.buildBlock&lt;&#x3c4;_0_0, &#x3c4;_0_1, &#x3c4;_0_2 where &#x3c4;_0_0 == &#x3c4;_1_0.TabValue, &#x3c4;_1_0: SwiftUI.TabContent, &#x3c4;_1_1: SwiftUI.TabContent, &#x3c4;_1_2: SwiftUI.TabContent, &#x3c4;_1_0.TabValue == &#x3c4;_1_1.TabValue, &#x3c4;_1_1.TabValue == &#x3c4;_1_2.TabValue&gt;(&#x3c4;_1_0, &#x3c4;_1_1, &#x3c4;_1_2) -&gt; some&gt;&gt;.0 in closure #1 () -&gt; &lt;&lt;opaque return type of SwiftUI.View.fullScreenCover&lt;&#x3c4;_0_0 where &#x3c4;_1_0: SwiftUI.View&gt;(isPresented: SwiftUI.Binding&lt;Swift.Bool&gt;, onDismiss: Swift.Optional&lt;() -&gt; ()&gt;, content: () -&gt; &#x3c4;_1_0) -&gt; some&gt;&gt;.0 in Slate.ContentView.body.getter : some"
-                  moduleName = "Slate.debug.dylib"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/thinethshehara/Documents/Projects/Slate/Slate/App/ContentView.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "34"
-                  endingLineNumber = "34">
-               </Location>
-               <Location
-                  uuid = "0724B6FC-1A91-4DC9-83BF-8358CAD151B9 - d73ebeecf4fa335d"
-                  shouldBeEnabled = "Yes"
-                  ignoreCount = "0"
-                  continueAfterRunningActions = "No"
-                  symbolName = "closure #1 () -&gt; () in closure #1 () -&gt; Slate.SlateTabView in closure #1 () -&gt; SwiftUI.NavigationStack&lt;SwiftUI.NavigationPath, Slate.SlateTabView&gt; in closure #1 () -&gt; &lt;&lt;opaque return type of static SwiftUI.TabContentBuilder.buildBlock&lt;&#x3c4;_0_0, &#x3c4;_0_1, &#x3c4;_0_2 where &#x3c4;_0_0 == &#x3c4;_1_0.TabValue, &#x3c4;_1_0: SwiftUI.TabContent, &#x3c4;_1_1: SwiftUI.TabContent, &#x3c4;_1_2: SwiftUI.TabContent, &#x3c4;_1_0.TabValue == &#x3c4;_1_1.TabValue, &#x3c4;_1_1.TabValue == &#x3c4;_1_2.TabValue&gt;(&#x3c4;_1_0, &#x3c4;_1_1, &#x3c4;_1_2) -&gt; some&gt;&gt;.0 in closure #1 () -&gt; &lt;&lt;opaque return type of SwiftUI.View.fullScreenCover&lt;&#x3c4;_0_0 where &#x3c4;_1_0: SwiftUI.View&gt;(isPresented: SwiftUI.Binding&lt;Swift.Bool&gt;, onDismiss: Swift.Optional&lt;() -&gt; ()&gt;, content: () -&gt; &#x3c4;_1_0) -&gt; some&gt;&gt;.0 in Slate.ContentView.body.getter : some"
-                  moduleName = "Slate.debug.dylib"
-                  usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/thinethshehara/Documents/Projects/Slate/Slate/App/ContentView.swift"
-                  startingColumnNumber = "9223372036854775807"
-                  endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "34"
-                  endingLineNumber = "34">
-               </Location>
-            </Locations>
          </BreakpointContent>
       </BreakpointProxy>
    </Breakpoints>
