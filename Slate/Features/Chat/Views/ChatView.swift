@@ -195,8 +195,9 @@ struct ChatView: View {
                     }) {
                         Image(systemName: "square.and.pencil")
                             .font(.system(size: 15))
-                            .foregroundColor(.primary)
+                            .foregroundColor(messages.isEmpty ? .secondary.opacity(0.5) : .primary)
                     }
+                    .disabled(messages.isEmpty)
                     
                     Button(action: {
                         HapticManager.trigger(.medium)

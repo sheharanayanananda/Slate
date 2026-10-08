@@ -66,20 +66,11 @@ class CheckboxAttachment: NSTextAttachment {
     }
     
     override func image(forBounds imageBounds: CGRect, textContainer: NSTextContainer?, characterIndex charIndex: Int) -> UIImage? {
-        guard let textStorage = textContainer?.textStorage else { return nil }
-        
-        let font: UIFont
-        var range = NSRange(location: 0, length: 0)
-        if charIndex < textStorage.length,
-           let f = textStorage.attribute(NSAttributedString.Key.font, at: charIndex, effectiveRange: &range) as? UIFont {
-            font = f
-        } else {
-            font = UIFont.preferredFont(forTextStyle: .body)
-        }
-        
-        let config = UIImage.SymbolConfiguration(font: font)
+        let size: CGFloat = 22
+        let pointSize = max(size - 2, 18)
+        let config = UIImage.SymbolConfiguration(pointSize: pointSize, weight: .regular)
         let systemName = isChecked ? "checkmark.circle.fill" : "circle"
-        let color = isChecked ? UIColor.systemBlue : UIColor.tertiaryLabel
+        let color = isChecked ? UIColor.systemBlue : UIColor.secondaryLabel.withAlphaComponent(0.65)
         return UIImage(systemName: systemName, withConfiguration: config)?.withTintColor(color, renderingMode: .alwaysOriginal)
     }
     
@@ -97,7 +88,7 @@ class CheckboxAttachment: NSTextAttachment {
             font = UIFont.preferredFont(forTextStyle: .body)
         }
         
-        let size = font.lineHeight
+        let size: CGFloat = 22
         let yOffset = (font.capHeight - size) / 2
         return CGRect(x: 0, y: yOffset, width: size, height: size)
     }
@@ -612,8 +603,12 @@ struct NativeTextView: UIViewRepresentable {
             } else if strippedLine.hasPrefix("- [ ] ") {
                 let attachment = CheckboxAttachment(isChecked: false)
                 let attrString = NSMutableAttributedString(attachment: attachment)
+                attrString.append(NSAttributedString(string: " ", attributes: [
+                    .font: font,
+                    .foregroundColor: UIColor.label
+                ]))
                 let contentText = String(strippedLine.dropFirst(6))
-                let contentAttr = parseInlineMarkdown(" " + contentText, font: font)
+                let contentAttr = parseInlineMarkdown(contentText, font: font)
                 attrString.append(contentAttr)
                 
                 attrString.addAttribute(.paragraphStyle, value: checklistParagraphStyle, range: NSRange(location: 0, length: attrString.length))
@@ -624,8 +619,13 @@ struct NativeTextView: UIViewRepresentable {
             } else if strippedLine.hasPrefix("- [x] ") {
                 let attachment = CheckboxAttachment(isChecked: true)
                 let attrString = NSMutableAttributedString(attachment: attachment)
+                attrString.append(NSAttributedString(string: " ", attributes: [
+                    .font: font,
+                    .foregroundColor: UIColor.label
+                ]))
+                
                 let contentText = String(strippedLine.dropFirst(6))
-                let contentAttr = parseInlineMarkdown(" " + contentText, font: font)
+                let contentAttr = parseInlineMarkdown(contentText, font: font)
                 
                 let mutableContent = NSMutableAttributedString(attributedString: contentAttr)
                 let textRange = NSRange(location: 0, length: mutableContent.length)
@@ -845,10 +845,10 @@ struct NativeTextView: UIViewRepresentable {
             let glyphRange = layoutManager.glyphRange(forCharacterRange: NSRange(location: characterIndex, length: 1), actualCharacterRange: nil)
             let boundingRect = layoutManager.boundingRect(forGlyphRange: glyphRange, in: textView.textContainer)
             
-            let expandedRect = boundingRect.insetBy(dx: -10, dy: -10)
-            
-            if expandedRect.contains(adjustedLocation) {
-                if let attachment = textView.textStorage.attribute(NSAttributedString.Key.attachment, at: characterIndex, effectiveRange: nil) as? CheckboxAttachment {
+            if let attachment = textView.textStorage.attribute(NSAttributedString.Key.attachment, at: characterIndex, effectiveRange: nil) as? CheckboxAttachment {
+                // Generous tap target (minimum 44x44 pt hit area centered on glyph)
+                let hitTarget = boundingRect.insetBy(dx: -14, dy: -14)
+                if hitTarget.contains(adjustedLocation) {
                     toggleCheckbox(at: characterIndex, in: textView, currentAttachment: attachment)
                 }
             }

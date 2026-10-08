@@ -178,5 +178,29 @@ struct SlateTests {
             }
         }
     }
+
+    @Test func testCheckedChecklistStrikethroughAndSpacing() throws {
+        let font = UIFont.preferredFont(forTextStyle: .body)
+        let checklistMarkdown = "- [x] Test markdown rendering\n- [ ] Review formatting guidelines"
+        let attr = NativeTextView.parseToAttributed(text: checklistMarkdown, font: font)
+        
+        // Find the index of the leading space right after the attachment in line 1
+        // Attachment is at index 0 (\u{FFFC}), space is at index 1
+        #expect(attr.length > 2)
+        let spaceChar = (attr.string as NSString).substring(with: NSRange(location: 1, length: 1))
+        #expect(spaceChar == " ")
+        
+        // The space must NOT have strikethroughStyle applied
+        let spaceStrikethrough = attr.attribute(.strikethroughStyle, at: 1, effectiveRange: nil) as? Int
+        #expect(spaceStrikethrough == nil || spaceStrikethrough == 0)
+        
+        // The actual text "Test" must have strikethroughStyle applied
+        let textStrikethrough = attr.attribute(.strikethroughStyle, at: 2, effectiveRange: nil) as? Int
+        #expect(textStrikethrough == NSUnderlineStyle.single.rawValue)
+        
+        // Serialization must roundtrip accurately
+        let serialized = NativeTextView.serializeToString(attributed: attr)
+        #expect(serialized == checklistMarkdown)
+    }
 }
 
