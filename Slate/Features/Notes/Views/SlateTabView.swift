@@ -96,11 +96,24 @@ struct SlateTabView: View {
             }
             .overlay {
                 if notes.isEmpty {
-                    ContentUnavailableView(
-                        "Hello !",
-                        systemImage: "snowflake",
-                        description: Text("Welcome To Slate")
-                    )
+                    VStack(spacing: 10) {
+                        Image(systemName: "snowflake")
+                            .font(.system(size: 55))
+                            .foregroundColor(.primary)
+                        
+                        VStack(spacing: 6) {
+                            Text("Slate")
+                                .font(.system(size: 25, weight: .bold))
+                                .foregroundColor(.primary)
+                            
+                            Text("Capture your thoughts")
+                                .font(.system(size: 15))
+                                .foregroundColor(.secondary)
+                        }
+                        .padding(.top, 6)
+                    }
+                    .multilineTextAlignment(.center)
+                    .offset(y: -40)
                 }
             }
         }
