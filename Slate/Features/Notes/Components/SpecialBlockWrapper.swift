@@ -82,7 +82,6 @@ struct SpecialBlockWrapper<Content: View>: View {
                 .frame(width: 1, height: 1)
             
             content
-                .allowsHitTesting(false)
                 .padding(6)
                 .background(
                     RoundedRectangle(cornerRadius: 18, style: .continuous)
@@ -92,16 +91,15 @@ struct SpecialBlockWrapper<Content: View>: View {
                     RoundedRectangle(cornerRadius: 18, style: .continuous)
                         .stroke(isSelected ? Color.blue.opacity(0.55) : Color.clear, lineWidth: 1.5)
                 )
-                .overlay(
-                    Color.clear
-                        .contentShape(Rectangle())
-                        .onTapGesture {
-                            let generator = UIImpactFeedbackGenerator(style: .light)
-                            generator.impactOccurred()
-                            onTap()
-                        }
-                )
         }
+        .contentShape(Rectangle())
+        .simultaneousGesture(
+            TapGesture().onEnded {
+                let generator = UIImpactFeedbackGenerator(style: .light)
+                generator.impactOccurred()
+                onTap()
+            }
+        )
         .padding(.vertical, 4)
     }
 }
