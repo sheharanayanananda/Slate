@@ -43,7 +43,7 @@ I am currently working on GenUI interactive checkboxes directly inside AI chat r
 
 To run Slate Genesis, you will need:
 * Xcode 16.0+
-* iOS 17.0+
+* iOS 26.0 or later
 * An Ollama account and API key from ollama.com
 
 1. Clone the repository and switch to the v2 branch:
@@ -53,7 +53,7 @@ To run Slate Genesis, you will need:
    git checkout v2
    ```
 
-2. Open `Slate.xcodeproj` in Xcode and run on your device or simulator.
+2. Open `Slate.xcodeproj` in Xcode and run on an iOS 26 simulator or device (`Cmd + R`).
 3. Open Settings from the Home tab and enter your Ollama API key.
 
 ### License
