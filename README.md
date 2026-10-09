@@ -1,106 +1,58 @@
-# Slate
+# Slate Origin (V1)
 
-Slate is a simple, smart note-taking app for iOS built with Swift and SwiftUI. It saves notes offline on your device, encrypts your keys, and lets you scan documents to create organized notes using AI.
+Welcome to Slate Origin.
 
----
+Slate Origin is the initial version of Slate, built to explore clean, distraction-free note-taking on iOS with smart document scanning and AI-assisted note organization. It saves everything locally on your device using SwiftData and connects to the Ollama Cloud API for intelligent features.
 
-## Features
+Further active development on Slate Origin has halted and this version is now retired. Slate Genesis on the v2 branch represents the future of the project, completely rebuilt from the ground up with streaming cloud AI chat and a hybrid block editor.
 
-### Rich Text Editor
-* **Writing Canvas**
-  Write and format notes easily. The editor supports bold, italic, underline, strikethrough, and paragraph spacing.
-* **Checklists**
-  Use standard markdown (`- [ ]` and `- [x]`) for lists. You can tap directly on the checkboxes inside the editor to check or uncheck items. The note saves automatically.
-* **Keyboard Toolbar**
-  A formatting bar sits above your keyboard so you can quickly style text, make lists, or indent items with one tap.
-* **Typing Safeguards**
-  Hidden safeguards keep the editor smooth, responsive, and stable while you write.
+### Technical Highlights
 
-### AI Note Organizer
-* **Smart Organizer**
-  Tap the sparkles button in the toolbar. The AI cleans up messy notes, fixes spelling mistakes, and organizes your text into a clean outline.
-* **Skeleton Loading Screen**
-  Shows a loading screen while the AI structures your note in the background.
-* **Typewriter Effect**
-  Renders the AI's organized output line-by-line with soft haptic feedback.
+#### Writing Canvas & Native Text Editor
+* NativeTextView editor: A custom text canvas built on UITextView that supports standard Markdown formatting for headings, bold, italic, underline, strikethrough, and lists.
+* Interactive checkboxes: Renders SF Symbol checkbox attachments for `- [ ]` and `- [x]` syntax. A surgical tap gesture recognizer uses glyph hit-testing so you can check and uncheck items directly in the text without disrupting your cursor position.
+* Keyboard accessory toolbar: A floating capsule bar sitting above the virtual keyboard with one-tap controls for styling, checklists, bullet lists, numbered lists, and indentation.
 
-### Saving Notes Offline & Security
-* **Offline Saving**
-  Saves your notes directly on your device using SwiftData. Notes are automatically sorted by date (newest first).
-* **Secure API Keys**
-  Encrypts and stores your API keys safely on your device using Apple Keychain so they stay private.
+#### AI Note Organization & Smart Lens
+* Organize with AI: Tap the sparkles button to have Ollama Cloud analyze messy, unstructured notes. The editor measures your typed lines, displays an animated SkeletonView loading placeholder, and renders the structured Markdown line-by-line using a typewriter animation with haptic feedback.
+* Smart Lens document scanner: Uses VisionKit (VNDocumentCameraViewController) to capture physical documents. On-device Vision OCR (VNRecognizeTextRequest) and scene classification (VNClassifyImageRequest) run in parallel, passing the extracted text and scene details to Ollama Cloud to generate structured Markdown notes.
+* Background title generation: When saving an untitled note, a background task asks Ollama Cloud for a concise title without blocking the interface.
 
-### Sharing & Exporting
-* **Export Options**
-  Export your notes as Rich Text (RTF), A4 PDF files (using PDFKit), or plain text (.txt) files.
-* **Quick List Actions**
-  Swipe left on any note in the list to share or export it. Swipe right to delete.
+#### Architecture & System Integration
+* Offline persistence: Notes are stored locally using SwiftData, automatically sorted in reverse chronological order.
+* Secure key storage: Your Ollama API key is encrypted directly in Apple Keychain using the Security framework.
+* Multi-format export: Share notes as adaptive Rich Text (RTF via a custom converter), A4 PDF files (rendered through PDFKit), or plain text.
+* Zero third-party dependencies: Built entirely with native Apple frameworks (SwiftUI, SwiftData, UIKit, VisionKit, Vision, PDFKit, Security).
 
-### Smart Lens (Camera Scan)
-* **Document Scan**
-  Scan paper documents, receipts, or whiteboards using your camera with VisionKit. The app crops and cleans up the image automatically.
-* **Text & Object Detection**
-  Recognizes text in the scan and identifies objects or scenes using Apple's Vision framework.
-* **AI Note Creator**
-  Uses the scanned text and image details to generate structured markdown notes. If the scan has no text, the AI describes the scene instead.
+### App Layout
 
-### Settings Panel
-* **Slide Transition**
-  Tap the gear button on the toolbar to slide the settings panel in from the left. Tap the back button to slide it away.
+* Slate: Your note library with rich Markdown previews, swipe-to-delete, and multi-format sharing.
+* New / Edit: The rich text editor with the floating formatting toolbar and AI organizer.
+* Tools: Standalone utility hub housing the Smart Lens document scanner and an experimental Scribe voice dictation prototype with animated audio waveforms.
+* Settings: A spring-animated slide-out panel for entering and validating your Ollama API key.
 
-### Product Roadmap
-* **Scribe**
-  Speak to the app to dictate thoughts and let the AI structure your note (Coming Soon).
-* **Web Clipper**
-  Extract summaries and key points from webpage links (Coming Soon).
+### Requirements
 
-### Demo Mode
-* **Sample Notes**
-  Turn on Demo Mode in settings to load 5 pre-made notes that showcase lists, formats, and sharing.
-* **Simulated Tools**
-  Presents mockup cards in the Tools tab for upcoming features.
+* Xcode 16.0 or later
+* iOS 26.0 or later
+* iPhone simulator or physical device (camera access required for Smart Lens)
+* Active internet connection for Ollama Cloud API requests
+* An Ollama account and API key from ollama.com
 
----
+### Getting Started
 
-## Requirements
-
-- Xcode 15.0 or later
-- iOS 17.0 or later
-- Camera permissions enabled (for Smart Lens)
-- Internet connection (for AI features)
-
----
-
-## Getting Started
-
-1. **Clone the Repository**:
+1. Clone the repository:
    ```bash
    git clone https://github.com/sheharanayanananda/Slate.git
    cd Slate
    ```
 
-2. **Open the Project**:
-   Double-click `Slate.xcodeproj` to open it in Xcode.
+2. Open `Slate.xcodeproj` in Xcode.
+3. Select an iPhone target (physical device or iOS 26 simulator) and run (`Cmd + R`).
+4. Tap the gear icon in the top-left of the Slate tab to open the slide-out Settings panel.
+5. Paste your Ollama API key. The key is validated live and saved securely to the Apple Keychain.
+6. Optional: Select your preferred model from the dropdown (defaults to `gemma4:31b`), or turn on Demo Mode to load sample notes.
 
-3. **Set Up API Keys**:
-   The app connects to your selected AI model using the API key in settings. Enter your key securely in the app Settings screen.
+### License
 
-4. **Build and Run**:
-   - Choose a target device (like an iPhone or simulator).
-   - Press `⌘ + R` or click the Play button in Xcode to run.
-
----
-
-## Testing
-
-The project includes test targets to verify core functionality:
-- **SlateTests**: Tests text formatting and data saving.
-- **SlateUITests**: Tests note creation and screen flows.
-
-Run tests using `⌘ + U` in Xcode.
-
----
-
-## License
-
-This project is licensed under the Slate Proprietary Source-Available and Commercial Restriction License - see the [LICENSE](LICENSE) file for details.
+Slate Origin Source-Available License. Free for personal inspection and educational evaluation; commercial use is prohibited without permission. See LICENSE for details.

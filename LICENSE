@@ -1,24 +1,37 @@
-Slate Proprietary and Source-Available License
+SLATE ORIGIN SOURCE-AVAILABLE LICENSE
 
+Version 2.0 (2026)
 Copyright (c) 2026 Thineth Shehara. All rights reserved.
 
-This software and all associated source files (collectively, the "Software") are proprietary. Unauthorized copying, modification, redistribution, or commercial use of the Software, via any medium or platform, is strictly prohibited except as permitted below.
+1. SCOPE AND PURPOSE
+This license governs access to the Slate Origin repository, source code, assets, and documentation (the "Software"). The Software is the proprietary intellectual property of Thineth Shehara (the "Author").
 
-1. PERSONAL AND EDUCATIONAL USE LICENSE
-You are granted a non-exclusive, non-transferable, royalty-free license to download, run, inspect, and modify the Software solely for personal, educational, research, and non-commercial evaluation purposes (including inspections by prospective employers and recruiters). 
+This is a source-available license, not an open-source license. It allows public inspection, learning, and non-commercial evaluation while strictly restricting commercial exploitation.
 
-2. COMMERCIAL USE RESTRICTIONS
-You may not use the Software, or any derivative works thereof, for any commercial purpose without obtaining a separate, written Commercial License from the copyright owner. Commercial purposes include, but are not limited to:
-- Operating a business, commercial enterprise, or generating revenue using the Software.
-- Publishing, sublicensing, or distributing the Software on any public application store or marketplace (including the Apple App Store).
-- Integrating the Software into any closed-source, proprietary, or commercial product or service.
+2. PERMITTED USES
+You are granted a non-exclusive, non-transferable, royalty-free right to:
+(a) View, clone, and run the Software locally for personal learning, educational research, and evaluation.
+(b) Inspect and review the source code as a recruiter, prospective employer, or hiring manager to evaluate the Author's technical work.
+(c) Make private local modifications for personal experimentation, provided they are not distributed or used commercially.
 
-3. COMMERCIAL LICENSING INQUIRIES
-Businesses, enterprises, or developers wishing to obtain a license for commercial use, enterprise deployment, closed-source forks, or redistribution rights may contact the copyright owner to negotiate and purchase a Commercial License.
+3. PROHIBITED USES
+Without prior written authorization from the Author, you may not:
+(a) Use the Software or any part of it for commercial purposes, revenue generation, business operations, or commercial products.
+(b) Publish, package, or distribute the Software or derivative works on any public or private app store, marketplace, or distribution platform (including the Apple App Store).
+(c) Host, deploy, or run the Software as a service (SaaS), API, web application, or cloud-hosted solution for third parties.
+(d) Rebrand, white-label, sell, rent, sublicense, or redistribute the source code or compiled binaries.
+(e) Use the Software or its implementations as the basis for patent claims or competing commercial products.
 
-Contact Channels:
-- Email: sheharanayanananda@gmail.com
-- LinkedIn: https://www.linkedin.com/in/thineth-nayanananda-54815b228/
+4. INTELLECTUAL PROPERTY
+The Author retains all copyright, trademark, and intellectual property rights in and to Slate Origin. Any permitted use must preserve all copyright notices, author credits, and this license text intact.
 
-4. NO WARRANTY
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+5. TERMINATION
+Any violation of the terms in this license immediately and automatically revokes your right to access, view, run, or hold copies of the Software.
+
+6. DISCLAIMER OF WARRANTIES AND LIABILITY
+The Software is provided "AS IS", without warranty of any kind, express or implied. In no event shall the Author be liable for any claim, damages, or other liability arising from the use of or inability to use this Software.
+
+7. COMMERCIAL LICENSING
+For commercial use, licensing inquiries, or enterprise deployment, contact:
+Email: sheharanayanananda@gmail.com
+LinkedIn: https://www.linkedin.com/in/thineth-nayanananda-54815b228/
